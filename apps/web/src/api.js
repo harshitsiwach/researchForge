@@ -33,6 +33,7 @@ export const uploadSeed = async (projId, file) => {
   return res.json();
 };
 export const listSeeds = (projId) => request(`/projects/${projId}/seeds`);
+export const generateSeed = (projId) => request(`/projects/${projId}/seeds/generate`, { method: 'POST' });
 
 // Runs
 export const createRun = (projId, config) =>

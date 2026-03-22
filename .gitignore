@@ -26,3 +26,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Runtime files
+apps/api/server.log
+apps/api/server.pid
+apps/web/client.log
+apps/web/client.pid

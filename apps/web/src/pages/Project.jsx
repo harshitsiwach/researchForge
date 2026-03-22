@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getProject, uploadSeed, listSeeds, listRuns } from '../api'
+import { getProject, uploadSeed, listSeeds, generateSeed, listRuns } from '../api'
 
 export default function Project() {
   const { wsId, projId } = useParams()
@@ -9,6 +9,7 @@ export default function Project() {
   const [seeds, setSeeds] = useState([])
   const [runs, setRuns] = useState([])
   const [uploading, setUploading] = useState(false)
+  const [generating, setGenerating] = useState(false)
   const fileRef = useRef()
 
   useEffect(() => { load() }, [projId])
@@ -39,6 +40,23 @@ export default function Project() {
     fileRef.current.value = ''
   }
 
+  async function handleGenerate() {
+    if (!project?.question) {
+      alert("Please set a research question first.")
+      return
+    }
+    setGenerating(true)
+    try {
+      await generateSeed(projId)
+      const s = await listSeeds(projId)
+      setSeeds(s)
+    } catch (e) {
+      console.error(e)
+      alert(e.message || "Failed to generate seed")
+    }
+    setGenerating(false)
+  }
+
   if (!project) return <div className="flex items-center gap-3"><div className="spinner" /> Loading project...</div>
 
   return (
@@ -53,11 +71,16 @@ export default function Project() {
       <div className="card mb-4">
         <div className="card-header">
           <div className="card-title">📄 Seed Materials</div>
-          <div>
+          <div className="flex gap-2">
+            <button className="btn btn-secondary btn-sm" onClick={handleGenerate}
+              disabled={generating || uploading}
+              title="Use the LLM to auto-generate a background brief based on the question">
+              {generating ? '✨ Generating...' : '✨ Auto-Generate Seed'}
+            </button>
             <input type="file" ref={fileRef} onChange={handleUpload}
               accept=".md,.txt,.pdf,.csv" style={{ display: 'none' }} />
             <button className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()}
-              disabled={uploading}>
+              disabled={uploading || generating}>
               {uploading ? 'Uploading...' : '+ Upload Seed'}
             </button>
           </div>

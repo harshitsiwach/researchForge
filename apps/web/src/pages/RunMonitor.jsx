@@ -1,16 +1,23 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getRun } from '../api'
+import PixelScene from '../features/simulation-visualization/components/PixelScene'
+import { useVizStore } from '../features/simulation-visualization/store/visualizationStore'
 
 export default function RunMonitor() {
   const { runId } = useParams()
   const navigate = useNavigate()
   const [run, setRun] = useState(null)
+  const { connect, disconnect } = useVizStore()
 
   useEffect(() => {
     loadRun()
+    connect(runId)
     const interval = setInterval(loadRun, 2000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      disconnect()
+    }
   }, [runId])
 
   async function loadRun() {
@@ -70,22 +77,26 @@ export default function RunMonitor() {
         </div>
       </div>
 
-      {/* Logs */}
-      <div className="card">
-        <div className="card-header">
-          <div className="card-title">Logs</div>
-          {run.status === 'running' && <div className="spinner" />}
-        </div>
-        <div className="log-viewer">
+      {/* Living Lab Visualization */}
+      <div style={{ height: 600, marginBottom: 16 }}>
+        <PixelScene runId={runId} />
+      </div>
+
+      {/* Raw Logs (Collapsible/Debug) */}
+      <details className="card">
+        <summary className="card-header cursor-pointer select-none">
+          <div className="card-title text-muted text-sm">Raw Text Logs (Debug)</div>
+        </summary>
+        <div className="log-viewer mt-4 border-t border-slate-800 pt-4">
           {run.log ? (
             run.log.split('\n').map((line, i) => (
-              <div key={i} className="log-line">{line}</div>
+              <div key={i} className="log-line text-xs">{line}</div>
             ))
           ) : (
-            <div className="text-muted">Waiting for logs...</div>
+            <div className="text-muted text-xs">Waiting for logs...</div>
           )}
         </div>
-      </div>
+      </details>
 
       {run.error && (
         <div className="card mt-4" style={{ borderColor: 'var(--error)' }}>

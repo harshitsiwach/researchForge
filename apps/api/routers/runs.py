@@ -78,11 +78,20 @@ def create_run(proj_id: str, body: CreateRun):
 def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, mode):
     def _run():
         log_lines = []
+        events_jsonl = []
 
         def log_cb(msg):
             log_lines.append(msg)
             conn = get_db()
             conn.execute("UPDATE runs SET log=? WHERE id=?", ("\n".join(log_lines), run_id))
+            conn.commit()
+            conn.close()
+
+        def event_cb(evt: dict):
+            import json
+            events_jsonl.append(json.dumps(evt))
+            conn = get_db()
+            conn.execute("UPDATE runs SET events_jsonl=? WHERE id=?", ("\n".join(events_jsonl), run_id))
             conn.commit()
             conn.close()
 
@@ -109,7 +118,7 @@ def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, m
             else:
                 q = question
 
-            result = adapter.run(q, seed_texts, log_callback=log_cb)
+            result = adapter.run(q, seed_texts, log_callback=log_cb, event_callback=event_cb)
 
             # Score the report
             log_cb("Evaluating report quality...")
@@ -163,6 +172,42 @@ def get_run(run_id: str):
         raise HTTPException(404, "Run not found")
     return dict(row)
 
+from fastapi.responses import StreamingResponse
+import asyncio
+
+@router.get("/runs/{run_id}/events")
+async def stream_run_events(run_id: str):
+    """Stream structured events using Server-Sent Events (SSE)."""
+    async def event_generator():
+        last_count = 0
+        while True:
+            # Re-fetch from DB since it's updated in background thread
+            conn = get_db()
+            row = conn.execute("SELECT status, events_jsonl FROM runs WHERE id=?", (run_id,)).fetchone()
+            conn.close()
+            
+            if not row:
+                yield f"data: {json.dumps({'type': 'error', 'message': 'Run not found'})}\n\n"
+                break
+                
+            events_str = row["events_jsonl"] or ""
+            events = [line for line in events_str.split("\n") if line.strip()]
+            
+            # Yield any new events
+            for line in events[last_count:]:
+                yield f"data: {line}\n\n"
+            
+            last_count = len(events)
+            
+            # End of stream if completed or failed
+            if row["status"] in ["completed", "failed"]:
+                # Ensure we don't end loop until we yield everything
+                yield f"data: {json.dumps({'type': 'stream_end', 'status': row['status']})}\n\n"
+                break
+                
+            await asyncio.sleep(1)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @router.get("/projects/{proj_id}/runs")
 def list_runs(proj_id: str):

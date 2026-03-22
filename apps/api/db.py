@@ -57,6 +57,7 @@ def init_db():
         started_at TEXT,
         finished_at TEXT,
         log TEXT DEFAULT '',
+        events_jsonl TEXT DEFAULT '',
         error TEXT
     );
     CREATE TABLE IF NOT EXISTS reports (

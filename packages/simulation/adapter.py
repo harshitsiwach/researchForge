@@ -183,29 +183,62 @@ Use clear headers, bullet points, and structured formatting."""
             {"role": "user", "content": prompt}
         ], temperature=0.5, max_tokens=4096)
 
-    # ── Full pipeline ─────────────────────────────────
-
-    def run(self, question: str, seeds: list[str], log_callback=None) -> dict:
+    def run(self, question: str, seeds: list[str], log_callback=None, event_callback=None) -> dict:
         """Execute the full simulation pipeline."""
+        import time
+        from packages.core.schemas import new_id
+        
+        sim_id = f"sim_{int(time.time())}"
+
         def log(msg: str):
             if log_callback:
                 log_callback(msg)
 
+        def emit(event_type: str, data: dict):
+            if event_callback:
+                payload = {
+                    "eventId": new_id("evt"),
+                    "timestamp": time.time(),
+                    "simulationId": sim_id,
+                    "type": event_type,
+                    "source": "adapter",
+                    **data
+                }
+                event_callback(payload)
+
+        emit("simulation_started", {"question": question})
+
         log("Extracting context from seed materials...")
+        emit("agent_state_changed", {"agentRole": "system", "state": "reading", "message": "Extracting context..."})
         context = self.extract_context(seeds)
         log(f"Found {len(context.get('entities', []))} entities, {len(context.get('themes', []))} themes")
 
         log(f"Generating {self.config.num_agents} agent personas...")
+        emit("simulation_progress", {"phase": "personas"})
         personas = self.generate_personas(context)
         log(f"Created {len(personas)} personas")
+        
+        for p in personas[:self.config.num_agents]:
+            emit("agent_spawned", {
+                "agentId": new_id("agt"),
+                "agentRole": p.get("name", "Agent"),
+                "agentName": p.get("name", "Agent"),
+                "state": "idle"
+            })
 
         log(f"Running {self.config.num_rounds}-round scenario exploration...")
+        emit("agent_debate_started", {"message": f"Starting {self.config.num_rounds} rounds of debate."})
         scenarios, raw_data = self.run_scenarios(question, context, personas)
         log(f"Generated {len(scenarios)} scenario branches")
+        emit("agent_debate_finished", {"scenariosCount": len(scenarios)})
 
         log("Composing research report...")
+        emit("agent_state_changed", {"agentRole": "system", "state": "writing", "message": "Composing report..."})
         report_md = self.compose_report(question, raw_data)
         log("Report complete")
+        emit("artifact_created", {"artifactId": "report_md"})
+
+        emit("simulation_finished", {})
 
         return {
             "context": context,
