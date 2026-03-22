@@ -8,7 +8,11 @@ export default function RunMonitor() {
   const { runId } = useParams()
   const navigate = useNavigate()
   const [run, setRun] = useState(null)
-  const { connect, disconnect } = useVizStore()
+  const { connect, disconnect, timeline } = useVizStore()
+
+  const feedEvents = timeline.filter(e => 
+    e.type === 'tool_called' || e.type === 'tool_result' || e.type === 'live_data_received'
+  )
 
   useEffect(() => {
     loadRun()
@@ -87,9 +91,9 @@ export default function RunMonitor() {
           <PixelScene runId={runId} />
         </div>
 
-        {/* Sidebar: Unit Stats */}
+        {/* Sidebar: Unit Stats & Live Feeds */}
         <div className="flex flex-col gap-4">
-          <div className="card" style={{ flex: 1 }}>
+          <div className="card" style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '16px' }}>UNIT_TELEMETRY</div>
             
             <div className="flex flex-col gap-6">
@@ -116,6 +120,46 @@ export default function RunMonitor() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ flex: 1, maxHeight: '334px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
+              <span>LIVE_INTEL_FEED</span>
+              {feedEvents.length > 0 && <span className="animate-pulse text-green-400">● ACTIVE</span>}
+            </div>
+            
+            <div className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ flex: 1 }}>
+              {feedEvents.length === 0 ? (
+                <div className="text-muted text-xs flex items-center justify-center h-full" style={{ opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
+                  AWAITING_EXTERNAL_DATA...
+                </div>
+              ) : (
+                feedEvents.reverse().map((evt, i) => (
+                  <div key={i} style={{ 
+                    background: 'rgba(0,0,0,0.4)', 
+                    border: '1px solid var(--border)', 
+                    borderLeft: `2px solid ${evt.type === 'tool_result' ? 'var(--text-accent)' : 'var(--text-neon)'}`,
+                    padding: '8px 10px',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: evt.type === 'tool_result' ? 'var(--text-accent)' : 'var(--text-neon)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)' }}>{evt.type === 'tool_result' ? `🔧 TOOL: ${evt.toolId}` : `📡 LIVE: ${evt.sourceType?.toUpperCase()}`}</span>
+                      <span className="text-muted" style={{ fontFamily: 'var(--font-mono)' }}>R{evt.round}</span>
+                    </div>
+                    {evt.type === 'tool_result' ? (
+                      <div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-primary)', marginBottom: '4px', fontStyle: 'italic' }}>"{evt.query}"</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{evt.resultPreview}</div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-primary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{evt.title}</div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

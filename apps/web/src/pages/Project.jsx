@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getProject, uploadSeed, listSeeds, generateSeed, listRuns } from '../api'
+import { getProject, uploadSeed, listSeeds, generateSeed, listRuns, getFeedTypes, getProjectFeeds, configureProjectFeeds, testFeedSource } from '../api'
 
 export default function Project() {
   const { wsId, projId } = useParams()
@@ -12,6 +12,12 @@ export default function Project() {
   const [generating, setGenerating] = useState(false)
   const fileRef = useRef()
 
+  const [feedTypes, setFeedTypes] = useState([])
+  const [feeds, setFeeds] = useState([])
+  const [showAddFeed, setShowAddFeed] = useState(false)
+  const [newFeed, setNewFeed] = useState({ type: 'news', label: 'News Headline Monitor', icon: '📰', query: '', url: '', name: '' })
+  const [testingFeed, setTestingFeed] = useState(false)
+
   useEffect(() => { load() }, [projId])
 
   async function load() {
@@ -20,6 +26,11 @@ export default function Project() {
       setProject(p)
       setSeeds(p.seeds || [])
       setRuns(p.runs || [])
+      
+      const ft = await getFeedTypes()
+      setFeedTypes(ft)
+      const f = await getProjectFeeds(projId)
+      setFeeds(f)
     } catch (e) {
       console.error(e)
     }
@@ -55,6 +66,54 @@ export default function Project() {
       alert(e.message || "Failed to generate seed")
     }
     setGenerating(false)
+  }
+
+  async function handleAddFeed() {
+    if (!newFeed.name) return alert("Please name this feed source")
+    if (newFeed.type === 'rss' && !newFeed.url) return alert("RSS requires a URL")
+    if ((newFeed.type === 'news' || newFeed.type === 'web') && !newFeed.query) return alert("This feed type requires a search query")
+    
+    const newSource = {
+      id: "fs_" + Date.now(),
+      type: newFeed.type,
+      name: newFeed.name,
+      query: newFeed.query,
+      url: newFeed.url
+    }
+    const updated = [...feeds, newSource]
+    try {
+      await configureProjectFeeds(projId, updated)
+      setFeeds(updated)
+      setShowAddFeed(false)
+      setNewFeed({ ...newFeed, query: '', url: '', name: '' })
+    } catch (e) {
+      alert("Failed to save feed")
+    }
+  }
+
+  async function handleRemoveFeed(id) {
+    const updated = feeds.filter(f => f.id !== id)
+    try {
+      await configureProjectFeeds(projId, updated)
+      setFeeds(updated)
+    } catch (e) {
+      alert("Failed to remove feed")
+    }
+  }
+
+  async function handleTestFeed(source) {
+    setTestingFeed(true)
+    try {
+      const res = await testFeedSource(source)
+      if (res.success) {
+        alert(`Test successful! Found ${res.count} items. Sample: ${res.sample?.title}`)
+      } else {
+        alert(`Test failed: ${res.error}`)
+      }
+    } catch (e) {
+      alert("Test request failed")
+    }
+    setTestingFeed(false)
   }
 
   if (!project) return <div className="flex items-center gap-3"><div className="spinner" /> Loading project...</div>
@@ -100,6 +159,99 @@ export default function Project() {
                 <span className="text-sm text-muted">{s.created_at?.slice(0, 10)}</span>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Live Data Feeds */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <div className="card-title">📡 Live Data Sources</div>
+          <button className="btn btn-secondary btn-sm" onClick={() => setShowAddFeed(!showAddFeed)}>
+            {showAddFeed ? 'Cancel' : '+ Add Source'}
+          </button>
+        </div>
+        
+        {showAddFeed && (
+          <div className="p-4 mb-4 border-b border-white/10" style={{ background: 'rgba(0,0,0,0.2)' }}>
+            <div className="grid grid-cols-2 gap-4 mb-4" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px' }}>
+              <div>
+                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Source Type</label>
+                <select className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
+                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                  value={newFeed.type}
+                  onChange={e => {
+                    const t = feedTypes.find(ft => ft.type === e.target.value)
+                    setNewFeed({...newFeed, type: t.type, label: t.label, icon: t.icon})
+                  }}>
+                  {feedTypes.map(t => <option key={t.type} value={t.type}>{t.icon} {t.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Display Name</label>
+                <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
+                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                  placeholder="e.g. AI News Feed"
+                  value={newFeed.name} onChange={e => setNewFeed({...newFeed, name: e.target.value})} />
+              </div>
+            </div>
+            
+            {(newFeed.type === 'news' || newFeed.type === 'web') && (
+              <div className="mb-4" style={{ marginBottom: '16px' }}>
+                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Search Query</label>
+                <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
+                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                  placeholder="Enter keyword to monitor..."
+                  value={newFeed.query} onChange={e => setNewFeed({...newFeed, query: e.target.value})} />
+              </div>
+            )}
+            
+            {newFeed.type === 'rss' && (
+              <div className="mb-4" style={{ marginBottom: '16px' }}>
+                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>RSS/Atom URL</label>
+                <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
+                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                  placeholder="https://..."
+                  value={newFeed.url} onChange={e => setNewFeed({...newFeed, url: e.target.value})} />
+              </div>
+            )}
+            
+            <button className="btn btn-primary btn-sm mt-2" onClick={handleAddFeed}>Save Source</button>
+          </div>
+        )}
+
+        {feeds.length === 0 && !showAddFeed ? (
+          <div className="empty-state" style={{ padding: '32px' }}>
+            <div className="empty-icon">📡</div>
+            <p className="empty-text">No live data sources configured. Agents will rely solely on static seeds and the LLM's internal knowledge.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {feeds.map(f => {
+              const fType = feedTypes.find(t => t.type === f.type)
+              return (
+                <div key={f.id} className="flex items-center justify-between"
+                  style={{ padding: '12px', borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)' }}>
+                  <div>
+                    <div className="font-semibold text-sm flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600 }}>
+                      <span>{fType?.icon || '📡'}</span> {f.name}
+                    </div>
+                    <div className="text-xs text-muted mt-1" style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      {f.type === 'rss' ? f.url : `Query: "${f.query}"`}
+                    </div>
+                  </div>
+                  <div className="flex gap-2" style={{ display: 'flex', gap: '8px' }}>
+                    <button className="btn btn-ghost btn-sm" onClick={() => handleTestFeed(f)} disabled={testingFeed}>
+                      Test
+                    </button>
+                    <button className="btn btn-ghost btn-sm" style={{ color: '#ef4444' }} onClick={() => handleRemoveFeed(f.id)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

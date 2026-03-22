@@ -64,3 +64,11 @@ export const configureTool = (toolId, config) =>
   request(`/tools/${toolId}/config`, { method: 'PUT', body: JSON.stringify({ config }) });
 export const testTool = (toolId, query) =>
   request(`/tools/${toolId}/test`, { method: 'POST', body: JSON.stringify({ query }) });
+
+// Feeds
+export const getFeedTypes = () => request('/feeds/sources');
+export const getProjectFeeds = (projId) => request(`/projects/${projId}/feeds`);
+export const configureProjectFeeds = (projId, sources) =>
+  request(`/projects/${projId}/feeds`, { method: 'POST', body: JSON.stringify({ sources }) });
+export const testFeedSource = (source) =>
+  request('/feeds/test', { method: 'POST', body: JSON.stringify(source) });

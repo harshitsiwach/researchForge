@@ -10,6 +10,7 @@ import copy
 import random
 from packages.core.llm import chat
 from packages.core.schemas import SimConfig
+from packages.core.json_repair import safe_parse_json
 
 
 class ResearchLoopRunner:
@@ -31,7 +32,7 @@ Propose a single change to one or more of these parameters:
 - critique_strength (current: {critique_strength}) — options: light, medium, strong, aggressive
 - report_template (current: {report_template}) — options: standard, detailed, executive, academic
 
-Respond in JSON:
+Respond in JSON only, no extra text:
 {{
   "mutation_description": "What you changed and why",
   "config_changes": {{
@@ -58,22 +59,12 @@ Respond in JSON:
         )
 
         resp = chat([
-            {"role": "system", "content": "You are a research config optimizer. Always respond with valid JSON."},
+            {"role": "system", "content": "You are a research config optimizer. Always respond with valid JSON only, no extra text."},
             {"role": "user", "content": prompt}
         ], temperature=0.8)
 
-        try:
-            data = json.loads(resp)
-        except json.JSONDecodeError:
-            start = resp.find("{")
-            end = resp.rfind("}") + 1
-            if start >= 0 and end > start:
-                try:
-                    data = json.loads(resp[start:end])
-                except json.JSONDecodeError:
-                    data = {"config_changes": {}, "mutation_description": "Failed to parse JSON"}
-            else:
-                data = {"config_changes": {}, "mutation_description": "Random perturbation"}
+        data = safe_parse_json(resp, fallback={"config_changes": {}, "mutation_description": "Random perturbation"})
+
 
         changes = data.get("config_changes", {})
         # Create a copy with mutations

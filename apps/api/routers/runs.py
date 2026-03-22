@@ -96,9 +96,29 @@ def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, m
             conn.close()
 
         try:
+            import json
             from packages.simulation.adapter import SimulationAdapter
             from packages.evaluation.scorer import Evaluator
             from packages.core.schemas import SimConfig
+            from packages.tools.registry import get_enabled_tools, execute_tool
+            from packages.tools.live_feed import LiveFeedManager
+
+            # 1. Setup tool caller
+            enabled_tools = get_enabled_tools()
+            tool_caller = None
+            if enabled_tools:
+                tool_caller = {
+                    "tools_info": [{"id": t.id, "description": t.description} for t in enabled_tools],
+                    "execute": execute_tool,
+                }
+
+            # 2. Setup live feeds
+            conn = get_db()
+            feeds_row = conn.execute("SELECT value FROM settings_kv WHERE key=?", (f"feeds_{proj_id}",)).fetchone()
+            conn.close()
+            
+            feed_sources = json.loads(feeds_row["value"]) if feeds_row and feeds_row["value"] else []
+            live_feed = LiveFeedManager(question, sources=feed_sources) if feed_sources else None
 
             sim_config = SimConfig(
                 id=config_id,
@@ -118,7 +138,14 @@ def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, m
             else:
                 q = question
 
-            result = adapter.run(q, seed_texts, log_callback=log_cb, event_callback=event_cb)
+            result = adapter.run(
+                q, 
+                seed_texts, 
+                log_callback=log_cb, 
+                event_callback=event_cb,
+                tool_caller=tool_caller,
+                live_feed_manager=live_feed
+            )
 
             # Score the report
             log_cb("Evaluating report quality...")

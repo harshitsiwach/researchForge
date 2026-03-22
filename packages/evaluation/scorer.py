@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 from packages.core.llm import chat
 from packages.core.schemas import EvalScore, CompareResult
+from packages.core.json_repair import safe_parse_json
 
 
 class Evaluator:
@@ -33,7 +34,7 @@ Research Question: {question}
 Report:
 {report}
 
-Respond ONLY with JSON:
+Respond ONLY with JSON, no extra text:
 {{
   "usefulness": 7.5,
   "consistency": 8.0,
@@ -51,21 +52,12 @@ Respond ONLY with JSON:
             report=report_md[:4000]
         )
         resp = chat([
-            {"role": "system", "content": "You are a strict research evaluator. Score fairly. Always respond with valid JSON."},
+            {"role": "system", "content": "You are a strict research evaluator. Score fairly. Always respond with valid JSON only, no extra text."},
             {"role": "user", "content": prompt}
         ], temperature=0.2)
-        try:
-            data = json.loads(resp)
-        except json.JSONDecodeError:
-            start = resp.find("{")
-            end = resp.rfind("}") + 1
-            if start >= 0 and end > start:
-                try:
-                    data = json.loads(resp[start:end])
-                except json.JSONDecodeError:
-                    data = {}
-            else:
-                data = {}
+
+        data = safe_parse_json(resp, fallback={})
+
 
         return EvalScore(
             usefulness=float(data.get("usefulness", 5.0)),
