@@ -68,7 +68,10 @@ Respond in JSON:
             start = resp.find("{")
             end = resp.rfind("}") + 1
             if start >= 0 and end > start:
-                data = json.loads(resp[start:end])
+                try:
+                    data = json.loads(resp[start:end])
+                except json.JSONDecodeError:
+                    data = {"config_changes": {}, "mutation_description": "Failed to parse JSON"}
             else:
                 data = {"config_changes": {}, "mutation_description": "Random perturbation"}
 

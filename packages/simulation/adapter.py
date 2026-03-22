@@ -52,7 +52,10 @@ Respond in JSON format:
             start = resp.find("{")
             end = resp.rfind("}") + 1
             if start >= 0 and end > start:
-                return json.loads(resp[start:end])
+                try:
+                    return json.loads(resp[start:end])
+                except json.JSONDecodeError:
+                    pass
             return {"entities": [], "claims": [], "themes": [], "tensions": []}
 
     # ── Step 2: Generate agent personas ───────────────
@@ -84,7 +87,10 @@ Respond as a JSON array of persona objects."""
             start = resp.find("[")
             end = resp.rfind("]") + 1
             if start >= 0 and end > start:
-                return json.loads(resp[start:end])
+                try:
+                    return json.loads(resp[start:end])
+                except json.JSONDecodeError:
+                    pass
             return [{"name": "Default Analyst", "perspective": "General", "expertise": "Research", "bias": "None"}]
 
     # ── Step 3: Run scenario exploration ──────────────
@@ -153,8 +159,11 @@ Respond in JSON format:
             start = resp.find("{")
             end = resp.rfind("}") + 1
             if start >= 0 and end > start:
-                result = json.loads(resp[start:end])
-                return result.get("scenarios", []), result
+                try:
+                    result = json.loads(resp[start:end])
+                    return result.get("scenarios", []), result
+                except json.JSONDecodeError:
+                    pass
             return [], {"scenarios": [], "key_findings": [], "rounds": []}
 
     # ── Step 4: Compose report ────────────────────────
