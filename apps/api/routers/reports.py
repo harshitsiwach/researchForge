@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import PlainTextResponse
 import json
-from db import get_db
+from packages.database.core import get_db
 
 router = APIRouter()
 

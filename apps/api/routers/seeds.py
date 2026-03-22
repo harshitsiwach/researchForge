@@ -1,7 +1,7 @@
 """Seed upload router."""
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from db import get_db
+from packages.database.core import get_db
 from packages.core.schemas import new_id
 
 router = APIRouter()

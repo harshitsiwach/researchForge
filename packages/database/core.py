@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from packages.core.config import settings
 
+# This assumes the settings.WORKSPACES_DIR is set correctly
 DB_PATH = Path(settings.WORKSPACES_DIR) / "researchforge.db"
 
 

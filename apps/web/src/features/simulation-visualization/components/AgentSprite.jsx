@@ -1,17 +1,17 @@
 import React from 'react';
 
 const stateConfig = {
-  idle:      { emoji: '😴', color: 'var(--bg-card)' },
-  spawning:  { emoji: '✨', color: 'var(--bg-card)' },
-  reading:   { emoji: '📖', color: 'rgba(99, 102, 241, 0.25)' },
-  thinking:  { emoji: '🤔', color: 'rgba(139, 92, 246, 0.25)' },
-  writing:   { emoji: '✍️', color: 'rgba(20, 184, 166, 0.25)' },
-  debating:  { emoji: '🗣️', color: 'rgba(168, 85, 247, 0.35)' },
-  waiting:   { emoji: '⏳', color: 'var(--bg-card)' },
-  reviewing: { emoji: '🔍', color: 'rgba(251, 191, 36, 0.2)' },
-  scoring:   { emoji: '📊', color: 'rgba(52, 211, 153, 0.2)' },
-  completed: { emoji: '✅', color: 'rgba(52, 211, 153, 0.25)' },
-  failed:    { emoji: '❌', color: 'rgba(248, 113, 113, 0.25)' },
+  idle:      { emoji: '⬡', color: 'rgba(255, 255, 255, 0.05)', glow: 'transparent' },
+  spawning:  { emoji: '⬢', color: 'var(--accent-indigo)', glow: 'var(--accent-glow)' },
+  reading:   { emoji: '👁️‍🗨️', color: 'var(--accent-teal)', glow: 'rgba(20, 184, 166, 0.3)' },
+  thinking:  { emoji: '🧠', color: 'var(--accent-purple)', glow: 'rgba(168, 85, 247, 0.3)' },
+  writing:   { emoji: '✍️', color: 'var(--accent-indigo)', glow: 'var(--accent-glow)' },
+  debating:  { emoji: '💬', color: 'var(--accent-teal)', glow: 'rgba(20, 184, 166, 0.4)' },
+  waiting:   { emoji: '⏳', color: 'rgba(255, 255, 255, 0.1)', glow: 'transparent' },
+  reviewing: { emoji: '🔬', color: 'var(--warning)', glow: 'rgba(245, 158, 11, 0.2)' },
+  scoring:   { emoji: '📊', color: 'var(--success)', glow: 'rgba(16, 185, 129, 0.2)' },
+  completed: { emoji: '✓', color: 'var(--success)', glow: 'rgba(16, 185, 129, 0.3)' },
+  failed:    { emoji: '×', color: 'var(--error)', glow: 'rgba(239, 68, 68, 0.3)' },
 };
 
 export default function AgentSprite({ agentId, agent, onClick }) {
@@ -19,59 +19,79 @@ export default function AgentSprite({ agentId, agent, onClick }) {
   const cfg = stateConfig[state] || stateConfig.idle;
   const isSystem = agentId === 'system';
 
+  const isActive = ['reading', 'thinking', 'writing', 'debating'].includes(state);
+
   return (
     <div
       onClick={() => onClick && onClick(agent)}
-      title={`${name} — ${state}`}
       style={{
-        width: 72, minHeight: 90, margin: '0 6px',
+        width: 80, minHeight: 100, margin: '0 8px',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
         cursor: 'pointer', position: 'relative',
-        transition: 'transform 0.4s ease',
+        transition: 'var(--transition-smooth)',
       }}
-      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-      onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-6px) scale(1.05)';
+        e.currentTarget.style.zIndex = 100;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+        e.currentTarget.style.zIndex = 1;
+      }}
     >
-      {/* Speech bubble */}
+      {/* ── Speech Bubble (Digital Readout) ── */}
       {message && (
         <div style={{
-          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-          marginBottom: 8, padding: '6px 10px', maxWidth: 160,
-          background: 'rgba(15, 23, 42, 0.95)', border: '1px solid rgba(99, 102, 241, 0.2)',
-          borderRadius: 8, fontSize: 11, color: '#94a3b8', lineHeight: 1.3,
-          whiteSpace: 'normal', wordBreak: 'break-word', zIndex: 20,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+          position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
+          marginBottom: 12, padding: '8px 12px', minWidth: 140, maxWidth: 200,
+          background: 'var(--bg-glass)', border: `1px solid ${isActive ? 'var(--text-neon)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius-md)', fontSize: '11px', color: 'var(--text-primary)',
+          fontFamily: 'var(--font-mono)', lineHeight: 1.4,
+          zIndex: 200, boxShadow: isActive ? 'var(--shadow-teal)' : '0 10px 25px rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(12px)',
         }}>
-          {message.length > 60 ? message.slice(0, 60) + '…' : message}
+          <div style={{ fontSize: '9px', color: 'var(--text-neon)', marginBottom: '4px', opacity: 0.7 }}>READOUT_V01</div>
+          {message.length > 80 ? message.slice(0, 80) + '…' : message}
+          
           <div style={{
             position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
-            borderWidth: 5, borderStyle: 'solid',
-            borderColor: 'rgba(15, 23, 42, 0.95) transparent transparent transparent',
+            borderWidth: '6px 6px 0 6px', borderStyle: 'solid',
+            borderColor: `${isActive ? 'var(--text-neon)' : 'rgba(15, 23, 42, 0.9)'} transparent transparent transparent`,
           }} />
         </div>
       )}
 
-      {/* Avatar */}
+      {/* ── Hologram Pedestal Effect ── */}
       <div style={{
-        width: 48, height: 48,
+        position: 'absolute', bottom: 20, width: 44, height: 12,
+        background: 'radial-gradient(ellipse at center, var(--accent-glow) 0%, transparent 70%)',
+        borderRadius: '50%', opacity: isActive ? 1 : 0.3,
+      }}></div>
+
+      {/* ── Avatar Node ── */}
+      <div style={{
+        width: 52, height: 52,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderRadius: 10, fontSize: 26,
-        background: cfg.color,
-        border: `2px solid ${state === 'debating' ? 'rgba(168, 85, 247, 0.6)' : 'rgba(99, 102, 241, 0.2)'}`,
-        boxShadow: state === 'debating' ? '0 0 12px rgba(168, 85, 247, 0.3)' : 'var(--shadow-sm)',
-        animation: (state === 'reading' || state === 'thinking') ? 'pulse 1.5s ease-in-out infinite' : 'none',
+        borderRadius: '50%', fontSize: 22,
+        background: isSystem ? '#1e293b' : 'var(--bg-secondary)',
+        border: `2px solid ${isActive ? cfg.color : 'var(--border)'}`,
+        boxShadow: `0 0 15px ${cfg.glow}`,
+        animation: isActive ? 'glowPulse 2s ease-in-out infinite' : 'none',
+        zIndex: 5,
+        color: isSystem ? 'var(--text-neon)' : cfg.color,
       }}>
-        {isSystem ? '⚙️' : cfg.emoji}
+        {isSystem ? '⬡' : cfg.emoji}
       </div>
 
-      {/* Name plate */}
+      {/* ── Data Tag (Name) ── */}
       <div style={{
-        marginTop: 4, fontSize: 10, fontFamily: "'JetBrains Mono', monospace",
-        background: 'rgba(0,0,0,0.5)', borderRadius: 4, padding: '2px 6px',
-        color: '#94a3b8', maxWidth: 72, overflow: 'hidden',
-        textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center',
+        marginTop: 10, fontSize: '10px', fontFamily: 'var(--font-mono)',
+        fontWeight: 600, color: 'var(--text-secondary)',
+        background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px',
+        border: '1px solid var(--border)', maxWidth: 80,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
-        {name}
+        {name.toUpperCase()}
       </div>
     </div>
   );

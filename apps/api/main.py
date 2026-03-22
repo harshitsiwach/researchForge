@@ -10,7 +10,7 @@ sys.path.insert(0, str(_root))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from db import init_db
+from packages.database.core import init_db
 from routers import workspaces, seeds, runs, reports, compare, app_settings, tools
 
 app = FastAPI(

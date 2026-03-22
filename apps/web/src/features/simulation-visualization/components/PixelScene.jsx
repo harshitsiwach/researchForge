@@ -16,135 +16,161 @@ export default function PixelScene({ runId }) {
   if (status === 'idle' || status === 'connecting') {
     return (
       <div style={{
-        height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#475569', fontSize: 15,
+        height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--text-secondary)', gap: 16
       }}>
-        <div className="spinner" style={{ marginRight: 12 }} /> Connecting to simulation event stream…
+        <div className="spinner" style={{ width: 32, height: 32 }} />
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.1em' }}>INITIALIZING_LAB_VISUALIZATION...</div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', gap: 16, height: '100%' }}>
+    <div style={{ display: 'flex', gap: 24, height: '100%', animation: 'fadeIn 0.5s ease-out' }}>
 
       {/* ── Main Scene ── */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        background: 'linear-gradient(180deg, rgba(10,14,26,1) 0%, rgba(15,23,42,0.9) 100%)',
-        border: '1px solid rgba(99,102,241,0.15)', borderRadius: 16, padding: 24,
-        position: 'relative', boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+        background: 'var(--bg-secondary)',
+        backgroundImage: `
+          linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px',
+        border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 32,
+        position: 'relative', boxShadow: 'inset 0 0 60px rgba(0,0,0,0.4)',
       }}>
-        {/* Header */}
+        {/* Header Overlay */}
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-          paddingBottom: 16, marginBottom: 16, borderBottom: '1px solid rgba(99,102,241,0.1)',
+          paddingBottom: 20, marginBottom: 20, borderBottom: '1px solid var(--border)',
+          zIndex: 10
         }}>
           <div>
+            <div style={{ color: 'var(--text-neon)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.2em', marginBottom: '4px' }}>LAB_ENVIRONMENT_LIVE</div>
             <h2 style={{
-              fontSize: 22, fontWeight: 700, margin: 0,
-              background: 'linear-gradient(135deg, #818cf8, #34d399)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              fontSize: 24, fontWeight: 700, margin: 0,
+              fontFamily: 'var(--font-display)', color: 'var(--text-primary)'
             }}>
-              🧪 Living Lab
+              Living Lab
             </h2>
-            <div style={{ fontSize: 13, color: '#475569', marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                background: status === 'streaming' ? '#34d399' : status === 'finished' ? '#6366f1' : '#f87171',
-                boxShadow: status === 'streaming' ? '0 0 8px rgba(52,211,153,0.5)' : 'none',
-                animation: status === 'streaming' ? 'pulse 1.5s ease-in-out infinite' : 'none',
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="badge-dot" style={{ 
+                color: status === 'streaming' ? 'var(--success)' : 'var(--accent-indigo)',
+                animation: status === 'streaming' ? 'pulse 2s infinite' : 'none'
               }} />
-              <span style={{ textTransform: 'uppercase', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>
-                {status}
+              <span style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                STATUS: {status}
               </span>
             </div>
           </div>
 
           {systemAgent && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <span style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Orchestrator</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-neon)', fontFamily: 'var(--font-mono)' }}>CORE_SYSTEM</span>
               <AgentSprite agentId="system" agent={systemAgent} onClick={setSelectedAgent} />
             </div>
           )}
         </div>
 
         {/* Debate Zone */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', margin: '8px 0' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', margin: '16px 0', zIndex: 5 }}>
           <DebateZone agents={debateAgents} onAgentClick={setSelectedAgent} />
         </div>
 
         {/* Research Desks */}
-        <div style={{ paddingTop: 16, borderTop: '1px solid rgba(99,102,241,0.1)', position: 'relative' }}>
-          <span style={{ position: 'absolute', bottom: 4, right: 8, fontSize: 10, color: '#334155' }}>Research Desks</span>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, minHeight: 90, paddingLeft: 8, alignItems: 'flex-end' }}>
+        <div style={{ 
+          paddingTop: 24, borderTop: '1px solid var(--border)', position: 'relative',
+          background: 'rgba(255,255,255,0.01)', margin: '0 -32px -32px', padding: '24px 32px'
+        }}>
+          <div style={{ 
+            position: 'absolute', top: 8, right: 32, fontSize: 9, 
+            color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontWeight: 600 
+          }}>RESEARCH_DESKS_SECTOR</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, minHeight: 100, alignItems: 'flex-end' }}>
             {deskAgents.length > 0 ? (
               deskAgents.map(ag => <AgentSprite key={ag.id} agentId={ag.id} agent={ag} onClick={setSelectedAgent} />)
             ) : (
-              <span style={{ color: '#334155', fontSize: 12 }}>All agents are in the debate room</span>
+              <div style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>ALL_UNITS_DEPLOYED_TO_DEBATE</div>
             )}
           </div>
         </div>
       </div>
 
       {/* ── Right Sidebar ── */}
-      <div style={{ width: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Inspector */}
+        {/* Agent Inspector */}
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(99,102,241,0.1)' }}>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>🕵️ Agent Inspector</span>
+          <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ color: 'var(--text-neon)', fontSize: '9px', fontWeight: 700, marginBottom: '4px' }}>UNIT_INSPECTOR</div>
+            <span style={{ fontSize: 16, fontWeight: 600, fontFamily: 'var(--font-display)' }}>Subject Analysis</span>
           </div>
-          <div style={{ flex: 1, padding: 16, overflowY: 'auto', fontSize: 13, color: '#94a3b8' }}>
+          <div style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
             {selectedAgent ? (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid rgba(99,102,241,0.1)' }}>
-                  <div style={{ fontSize: 28, background: 'rgba(15,23,42,0.8)', padding: 8, borderRadius: 8 }}>
-                    {selectedAgent.id === 'system' ? '⚙️' : '🤖'}
+              <div className="animate-in">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 20, marginBottom: 20, borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ 
+                    width: 52, height: 52, borderRadius: 'var(--radius-md)', 
+                    background: 'var(--bg-secondary)', border: '1px solid var(--border-hover)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24
+                  }}>
+                    {selectedAgent.id === 'system' ? '⬡' : '🤖'}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 700, color: '#f1f5f9', fontSize: 15 }}>{selectedAgent.name}</div>
-                    <div style={{ fontSize: 11, color: '#475569', fontFamily: "'JetBrains Mono', monospace" }}>{selectedAgent.role}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 16 }}>{selectedAgent.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-accent)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>{selectedAgent.role}</div>
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>State</div>
-                  <span style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '3px 10px', borderRadius: 6, fontSize: 12 }}>
-                    {selectedAgent.state}
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>CURRENT_STATE</div>
+                  <span className={`badge badge-${selectedAgent.state === 'failed' ? 'failed' : selectedAgent.state === 'completed' ? 'completed' : 'running'}`}>
+                    <span className="badge-dot" />
+                    {selectedAgent.state.toUpperCase()}
                   </span>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Last Message</div>
-                  <div style={{ background: 'rgba(15,23,42,0.6)', padding: 10, borderRadius: 8, fontStyle: 'italic', lineHeight: 1.5 }}>
-                    "{selectedAgent.message || 'Waiting for assignment…'}"
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>NEURAL_OUTPUT</div>
+                  <div style={{ 
+                    background: 'rgba(0,0,0,0.3)', padding: 16, borderRadius: 'var(--radius-md)', 
+                    fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, border: '1px solid var(--border)' 
+                  }}>
+                    <span style={{ color: 'var(--text-neon)', fontSize: '18px', marginRight: '4px' }}>“</span>
+                    {selectedAgent.message || 'IDLE_STATE: AWAITING_INPUT'}
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Location</div>
-                  <span style={{ fontSize: 12 }}>📍 {selectedAgent.location || 'unknown'}</span>
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>SECTOR</div>
+                  <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                    📍 AREA_{selectedAgent.location?.toUpperCase() || 'UNKNOWN'}
+                  </div>
                 </div>
 
-                <div
+                <button 
                   onClick={() => setSelectedAgent(null)}
-                  style={{ textAlign: 'center', fontSize: 11, color: '#475569', cursor: 'pointer', paddingTop: 12, borderTop: '1px solid rgba(99,102,241,0.07)' }}
+                  className="btn btn-ghost btn-sm w-full"
+                  style={{ marginTop: 12, border: '1px solid var(--border)', fontSize: '10px' }}
                 >
-                  [ Close Inspector ]
-                </div>
+                  DISCONNECT_FROM_UNIT
+                </button>
               </div>
             ) : (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 16, color: '#334155' }}>
-                Click any agent to inspect their role, state, and current thoughts.
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: 32, marginBottom: 16, opacity: 0.3 }}>◌</div>
+                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', maxWidth: '200px' }}>SELECT_AGENT_FOR_INSPECTION</div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Timeline */}
-        <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(99,102,241,0.1)' }}>
-            <span style={{ fontSize: 14, fontWeight: 600 }}>⏱️ Activity Log</span>
+        {/* Activity Log */}
+        <div className="card" style={{ height: '300px', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ color: 'var(--text-neon)', fontSize: '9px', fontWeight: 700, marginBottom: '4px' }}>EVENT_LOG</div>
+            <span style={{ fontSize: 14, fontWeight: 600 }}>Activity Stream</span>
           </div>
           <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
             <TimelineFeed />

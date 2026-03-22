@@ -74,7 +74,7 @@ def get_tool(tool_id: str) -> Optional[ToolDef]:
 def get_enabled_tool_ids() -> list[str]:
     """Read enabled tools from the settings_kv table."""
     try:
-        from db import get_db
+        from packages.database.core import get_db
         conn = get_db()
         row = conn.execute("SELECT value FROM settings_kv WHERE key='enabled_tools'").fetchone()
         conn.close()
@@ -86,7 +86,7 @@ def get_enabled_tool_ids() -> list[str]:
 
 
 def set_enabled_tool_ids(ids: list[str]):
-    from db import get_db
+    from packages.database.core import get_db
     conn = get_db()
     conn.execute(
         "INSERT OR REPLACE INTO settings_kv (key, value) VALUES (?, ?)",

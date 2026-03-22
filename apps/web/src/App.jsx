@@ -15,21 +15,37 @@ function App() {
     <div className="app-layout">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          ResearchForge
+          Research<span>Forge</span>
         </div>
+        
         <NavLink to="/" className={({ isActive }) => `nav-link ${isActive && location.pathname === '/' ? 'active' : ''}`}>
-          <span className="nav-icon">🏠</span> Home
-        </NavLink>
-        <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <span className="nav-icon">⚙️</span> Settings
+          <span className="nav-icon">⬡</span> <span>Home</span>
         </NavLink>
         <NavLink to="/toolbox" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <span className="nav-icon">🧰</span> Toolbox
+          <span className="nav-icon">🛠</span> <span>Toolbox</span>
+        </NavLink>
+        <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <span className="nav-icon">⌥</span> <span>Settings</span>
         </NavLink>
 
         <div style={{ flex: 1 }} />
-        <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text-muted)' }}>
-          Local-first research platform
+        
+        <div style={{ padding: '0 12px' }}>
+          <div style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            padding: '12px',
+            borderRadius: 'var(--radius-md)',
+            fontSize: '11px',
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-mono)',
+          }}>
+            <div style={{ color: 'var(--text-neon)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="badge-dot" style={{ width: 6, height: 6 }}></span>
+              LAB STATUS: ACTIVE
+            </div>
+            SYSTEM v0.1.0-CYBER
+          </div>
         </div>
       </aside>
 

@@ -52,7 +52,7 @@ class ToolConfigBody(BaseModel):
 def configure_tool(tool_id: str, body: ToolConfigBody):
     """Save tool-specific configuration (API keys, etc.)."""
     import json
-    from db import get_db
+    from packages.database.core import get_db
     conn = get_db()
     conn.execute(
         "INSERT OR REPLACE INTO settings_kv (key, value) VALUES (?, ?)",
@@ -71,7 +71,7 @@ class TestToolBody(BaseModel):
 def test_tool(tool_id: str, body: TestToolBody):
     """Test a tool with a sample query."""
     import json
-    from db import get_db
+    from packages.database.core import get_db
     # Load tool-specific config if any
     config = {}
     try:

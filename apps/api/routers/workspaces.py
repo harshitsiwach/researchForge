@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from db import get_db
+from packages.database.core import get_db
 from packages.core.schemas import new_id
 from datetime import datetime
 

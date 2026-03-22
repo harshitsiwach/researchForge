@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from db import get_db
+from packages.database.core import get_db
 from packages.core.schemas import new_id, SimConfig, RunMode, RunStatus
 
 router = APIRouter()
