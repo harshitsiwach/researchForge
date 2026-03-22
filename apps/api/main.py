@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from db import init_db
-from routers import workspaces, seeds, runs, reports, compare, app_settings
+from routers import workspaces, seeds, runs, reports, compare, app_settings, tools
 
 app = FastAPI(
     title="ResearchForge API",
@@ -34,6 +34,7 @@ app.include_router(runs.router, prefix="/api", tags=["runs"])
 app.include_router(reports.router, prefix="/api", tags=["reports"])
 app.include_router(compare.router, prefix="/api", tags=["compare"])
 app.include_router(app_settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(tools.router, prefix="/api/tools", tags=["tools"])
 
 
 @app.on_event("startup")

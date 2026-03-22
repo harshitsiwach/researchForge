@@ -56,3 +56,11 @@ export const promoteConfig = (projId, runId) =>
 // Settings
 export const getSettings = () => request('/settings');
 export const updateSettings = (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) });
+
+// Tools
+export const listTools = () => request('/tools');
+export const toggleTool = (toolId) => request(`/tools/${toolId}/toggle`, { method: 'PUT' });
+export const configureTool = (toolId, config) =>
+  request(`/tools/${toolId}/config`, { method: 'PUT', body: JSON.stringify({ config }) });
+export const testTool = (toolId, query) =>
+  request(`/tools/${toolId}/test`, { method: 'POST', body: JSON.stringify({ query }) });

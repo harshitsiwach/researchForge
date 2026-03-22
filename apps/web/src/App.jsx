@@ -6,6 +6,7 @@ import RunMonitor from './pages/RunMonitor'
 import Results from './pages/Results'
 import Compare from './pages/Compare'
 import Settings from './pages/Settings'
+import Toolbox from './pages/Toolbox'
 
 function App() {
   const location = useLocation()
@@ -21,6 +22,9 @@ function App() {
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <span className="nav-icon">⚙️</span> Settings
+        </NavLink>
+        <NavLink to="/toolbox" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <span className="nav-icon">🧰</span> Toolbox
         </NavLink>
 
         <div style={{ flex: 1 }} />
@@ -38,6 +42,7 @@ function App() {
           <Route path="/run/:runId/results" element={<Results />} />
           <Route path="/workspace/:wsId/project/:projId/compare" element={<Compare />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/toolbox" element={<Toolbox />} />
         </Routes>
       </main>
     </div>
