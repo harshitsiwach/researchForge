@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from db import get_db
+from packages.database.core import get_db
 from packages.evaluation.scorer import Evaluator
 
 router = APIRouter()
