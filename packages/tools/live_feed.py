@@ -50,12 +50,6 @@ class LiveFeedManager:
     """Manages real-time data feeds during a simulation run."""
 
     def __init__(self, question: str, sources: list[dict] | None = None, interval: int = 30):
-        """
-        Args:
-            question: The research question (used to generate search queries)
-            sources: List of source configs, e.g. [{"type": "news", "query": "AI"}, {"type": "web", "query": "..."}]
-            interval: Seconds between fetch cycles
-        """
         self.question = question
         self.sources = sources or []
         self.interval = interval
@@ -64,18 +58,34 @@ class LiveFeedManager:
         self._thread: Optional[threading.Thread] = None
         self._seen_titles: set[str] = set()
         self._fetch_count = 0
+        self._ws_apps = []
 
     def start(self):
         """Start the background feed fetcher."""
         if not self.sources:
             return  # Nothing to do
         self._stop_event.clear()
+        
+        # Start the polling loop thread
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
+        
+        # Start persistent websocket listeners
+        for source in self.sources:
+            if source.get("type") == "websocket":
+                self._start_websocket_listener(source)
 
     def stop(self):
         """Stop the background feed fetcher."""
         self._stop_event.set()
+        
+        # Close any open websockets
+        for ws in self._ws_apps:
+            try:
+                ws.close()
+            except:
+                pass
+                
         if self._thread:
             self._thread.join(timeout=5)
 
@@ -111,6 +121,9 @@ class LiveFeedManager:
                     self._fetch_web(query)
                 elif source_type == "rss":
                     self._fetch_rss(source.get("url", ""))
+                elif source_type == "api_poll":
+                    self._fetch_api_poll(source)
+                # Note: 'websocket' type is handled via persistent threads started in start()
             except Exception as e:
                 print(f"[LiveFeed] Error fetching {source}: {e}")
         self._fetch_count += 1
@@ -182,3 +195,80 @@ class LiveFeedManager:
                 self._queue.put(feed_item)
         except Exception as e:
             print(f"[LiveFeed] RSS fetch failed: {e}")
+
+    def _fetch_api_poll(self, source: dict):
+        url = source.get("url", "")
+        if not url:
+            return
+            
+        try:
+            import requests
+            import json
+            resp = requests.get(url, timeout=10)
+            try:
+                data = resp.json()
+                content = json.dumps(data, indent=2)
+            except:
+                content = resp.text
+                
+            # Use content hash to avoid spamming the same unchanged API response
+            import hashlib
+            content_hash = hashlib.md5(content.encode()).hexdigest()
+            if content_hash in self._seen_titles:
+                return
+            self._seen_titles.add(content_hash)
+            
+            self._queue.put(FeedItem(
+                source_type="api_poll",
+                title=f"API Response from {url}",
+                content=content[:5000],
+                url=url
+            ))
+        except Exception as e:
+            print(f"[LiveFeed] API Poll failed: {e}")
+
+    def _start_websocket_listener(self, source: dict):
+        url = source.get("url", "")
+        if not url:
+            return
+            
+        def on_message(ws, message):
+            if self._stop_event.is_set():
+                ws.close()
+                return
+                
+            # Filter identical repetitive messages
+            import hashlib
+            msg_hash = hashlib.md5(message.encode()).hexdigest()
+            if msg_hash in self._seen_titles:
+                return
+            self._seen_titles.add(msg_hash)
+            
+            try:
+                import json
+                parsed = json.loads(message)
+                content = json.dumps(parsed, indent=2)
+            except:
+                content = str(message)
+                
+            self._queue.put(FeedItem(
+                source_type="websocket",
+                title=f"New WebSocket Message",
+                content=content[:2000],
+                url=url
+            ))
+
+        def on_error(ws, error):
+            print(f"[LiveFeed] WebSocket Error ({url}): {error}")
+
+        def run_ws():
+            try:
+                import websocket
+                ws = websocket.WebSocketApp(url, on_message=on_message, on_error=on_error)
+                self._ws_apps.append(ws)
+                ws.run_forever()
+            except Exception as e:
+                print(f"[LiveFeed] Failed to start WSS {url}: {e}")
+
+        t = threading.Thread(target=run_ws, daemon=True)
+        t.start()

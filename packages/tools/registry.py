@@ -33,6 +33,8 @@ BUILTIN_MODULES = [
     "packages.tools.builtins.arxiv_search",
     "packages.tools.builtins.news_search",
     "packages.tools.builtins.calculator",
+    "packages.tools.builtins.api_fetch",
+    "packages.tools.builtins.websocket_read",
 ]
 
 _REGISTRY: dict[str, ToolDef] = {}

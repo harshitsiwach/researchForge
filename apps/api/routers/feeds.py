@@ -28,6 +28,8 @@ def get_feed_types():
         {"type": "news", "label": "News Headline Monitor", "icon": "📰", "requires": "query"},
         {"type": "web", "label": "Web Search Monitor", "icon": "🌐", "requires": "query"},
         {"type": "rss", "label": "RSS/Atom Feed", "icon": "📡", "requires": "url"},
+        {"type": "api_poll", "label": "HTTP API Polling", "icon": "🔌", "requires": "url"},
+        {"type": "websocket", "label": "WebSocket Stream", "icon": "⚡", "requires": "url"},
     ]
 
 

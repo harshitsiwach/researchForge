@@ -62,6 +62,7 @@ class SimConfig(BaseModel):
     debate_style: str = "structured"
     critique_strength: str = "medium"
     report_template: str = "standard"
+    endless_mode: bool = False
     extra: dict = Field(default_factory=dict)
     is_baseline: bool = False
     promoted_at: Optional[datetime] = None

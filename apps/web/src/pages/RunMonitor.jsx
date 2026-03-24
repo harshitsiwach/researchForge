@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getRun } from '../api'
+import { getRun, stopRun } from '../api'
 import PixelScene from '../features/simulation-visualization/components/PixelScene'
 import { useVizStore } from '../features/simulation-visualization/store/visualizationStore'
 
@@ -33,6 +33,16 @@ export default function RunMonitor() {
     }
   }
 
+  async function handleStop() {
+    if (!window.confirm("Are you sure you want to stop this simulation?")) return;
+    try {
+      await stopRun(runId)
+      await loadRun()
+    } catch (e) {
+      alert("Failed to stop run")
+    }
+  }
+
   if (!run) return (
     <div className="flex items-center gap-4 mt-12 animate-in">
       <div className="spinner" style={{ width: 24, height: 24 }} />
@@ -62,6 +72,11 @@ export default function RunMonitor() {
         {run.status === 'completed' && (
           <button className="btn btn-primary" onClick={() => navigate(`/run/${runId}/results`)}>
             Synthesize Results →
+          </button>
+        )}
+        {run.status === 'running' && (
+          <button className="btn btn-secondary" style={{ color: '#ef4444', borderColor: 'rgba(239,68,68,0.3)' }} onClick={handleStop}>
+            🛑 Stop Simulation
           </button>
         )}
       </div>

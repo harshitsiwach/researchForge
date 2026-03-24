@@ -125,27 +125,40 @@ Respond in JSON only:
     # ── Step 3: Run scenario exploration (with tools) ─
 
     def run_scenarios(self, question: str, context: dict, personas: list[dict],
-                      tool_caller=None, live_feed=None, log=None, emit=None) -> tuple:
+                      tool_caller=None, live_feed=None, log=None, emit=None, check_stop=None) -> tuple:
         """Run multi-round scenario exploration with real-time tool usage."""
         persona_desc = "\n".join([
             f"- **{p.get('name', 'Agent')}**: {p.get('perspective', '')} (expertise: {p.get('expertise', '')})"
             for p in personas[:self.config.num_agents]
         ])
 
-        # Accumulate extra intel gathered from tools and live feeds
-        extra_intel = []
-
-        # Run individual rounds with tool-calling between them
         all_rounds = []
-        for round_num in range(1, self.config.num_rounds + 1):
+        round_num = 1
+        
+        import time
+        
+        while True:
+            if check_stop and check_stop():
+                if log:
+                    log("Simulation stopped by user.")
+                break
+
+            if not self.config.endless_mode and round_num > self.config.num_rounds:
+                break
+
             if log:
-                log(f"  Round {round_num}/{self.config.num_rounds}...")
+                log(f"  Round {round_num}{' (Endless)' if self.config.endless_mode else f'/{self.config.num_rounds}'}...")
+
+            tools_used = False
+            live_items_added = False
+            round_intel = []
 
             # --- Tool-calling between rounds ---
             if tool_caller and round_num > 1:
                 context_so_far = json.dumps(all_rounds[-1:], indent=1)[:500] if all_rounds else "No prior rounds"
                 tool_request = self.request_tool_call(question, round_num, context_so_far, tool_caller["tools_info"])
                 if tool_request and tool_request.get("tool_id") and tool_request.get("query"):
+                    tools_used = True
                     tool_id = tool_request["tool_id"]
                     tool_query = tool_request["query"]
                     if log:
@@ -158,7 +171,7 @@ Respond in JSON only:
                         })
                     # Execute the tool
                     tool_result = tool_caller["execute"](tool_id, tool_query)
-                    extra_intel.append(f"[Tool: {tool_id}] {tool_result[:800]}")
+                    round_intel.append(f"[Tool: {tool_id}] {tool_result[:800]}")
                     if log:
                         log(f"    ✓ Got {len(tool_result)} chars from {tool_id}")
                     if emit:
@@ -173,7 +186,8 @@ Respond in JSON only:
             if live_feed:
                 items = live_feed.pull_items()
                 for item in items:
-                    extra_intel.append(item.to_context_str())
+                    live_items_added = True
+                    round_intel.append(item.to_context_str())
                     if log:
                         log(f"    📡 Live data: {item.title[:60]}")
                     if emit:
@@ -184,50 +198,70 @@ Respond in JSON only:
                             "round": round_num,
                         })
 
-        # Now generate the full scenario analysis in one LLM call
-        # (including all the extra intel gathered)
-        intel_section = ""
-        if extra_intel:
-            intel_section = f"""
+            # Check if we should idle in Endless Mode
+            if self.config.endless_mode and not tools_used and not live_items_added and round_num > 1:
+                if log:
+                    log("    💤 Idling... waiting for live data.")
+                time.sleep(5)
+                # Skip the heavy LLM debate round if no fresh data arrived
+                continue
 
-ADDITIONAL REAL-TIME INTELLIGENCE GATHERED DURING RESEARCH:
-{chr(10).join(extra_intel[:10])}
+            # --- Generate this Round's Debate ---
+            intel_section = ""
+            if round_intel:
+                intel_section = f"""
+FRESH INTELLIGENCE FOR THIS ROUND:
+{chr(10).join(round_intel)}
 
-Use this fresh intelligence to inform and ground your analysis."""
+Incorporate this fresh intelligence directly into the current debate."""
 
-        prompt = f"""You are orchestrating a structured scenario exploration with {self.config.num_agents} agents.
+            prompt = f"""You are orchestrating round {round_num} of a {self.config.debate_style} discussion with {self.config.num_agents} agents.
 
 Research Question: {question}
 
 Key Context:
 - Claims: {json.dumps(context.get('claims', [])[:5])}
 - Themes: {json.dumps(context.get('themes', [])[:5])}
-- Tensions: {json.dumps(context.get('tensions', [])[:5])}
 
 Participating Agents:
 {persona_desc}
 
-Run {self.config.num_rounds} rounds of {self.config.debate_style} debate with {self.config.critique_strength} critique.
+Previous Round Summary (if any):
+{json.dumps(all_rounds[-1:] if all_rounds else 'None')}
 {intel_section}
 
-For each round, agents should:
-1. Propose scenario branches (what could happen)
-2. Challenge each other's assumptions
-3. Identify blind spots
-4. Build on strong ideas
+For this round, agents should challenge assumptions and build on ideas.
+Output ONLY valid JSON for this single round:
+{{
+  "round": {round_num},
+  "key_points": ["..."],
+  "disagreements": ["..."],
+  "emerging_consensus": "..."
+}}"""
+            resp = chat([
+                {"role": "system", "content": "You are a research simulation engine generating a single round of agent debate. Output valid JSON only."},
+                {"role": "user", "content": prompt}
+            ], temperature=0.7, max_tokens=1000)
 
-After all rounds, generate 3-5 distinct scenario branches showing different plausible futures.
+            round_data = safe_parse_json(resp, fallback={
+                "round": round_num, 
+                "key_points": ["Simulation error"], 
+                "disagreements": [], 
+                "emerging_consensus": "Error generating round"
+            })
+            all_rounds.append(round_data)
+            round_num += 1
+
+        # Now generate the final scenario synthesis
+        prompt = f"""Based on the {len(all_rounds)} rounds of structured debate, generate 3-5 distinct scenario branches showing different plausible futures.
+
+Research Question: {question}
+
+Full Debate Summary:
+{json.dumps(all_rounds, indent=1)[:6000]}
 
 Respond in JSON format only, no extra text:
 {{
-  "rounds": [
-    {{
-      "round": 1,
-      "key_points": ["..."],
-      "disagreements": ["..."],
-      "emerging_consensus": "..."
-    }}
-  ],
   "scenarios": [
     {{
       "id": "S1",
@@ -243,14 +277,13 @@ Respond in JSON format only, no extra text:
   "unresolved_questions": ["..."]
 }}"""
         resp = chat([
-            {"role": "system", "content": "You are a research simulation engine. Produce structured multi-scenario analysis. Always respond with valid JSON only, no extra text."},
+            {"role": "system", "content": "You are a research simulation engine. Produce structured multi-scenario analysis based on the debate rounds. Always respond with valid JSON only."},
             {"role": "user", "content": prompt}
         ], temperature=0.8, max_tokens=4096)
 
-        result = safe_parse_json(resp, fallback=None)
-        if result and isinstance(result, dict):
-            return result.get("scenarios", []), result
-        return [], {"scenarios": [], "key_findings": [], "rounds": []}
+        final_data = safe_parse_json(resp, fallback={"scenarios": [], "key_findings": [], "unresolved_questions": []})
+        final_data["rounds"] = all_rounds
+        return final_data.get("scenarios", []), final_data
 
     # ── Step 4: Compose report ────────────────────────
 
@@ -281,7 +314,7 @@ Use clear headers, bullet points, and structured formatting."""
     # ── Main Pipeline ─────────────────────────────────
 
     def run(self, question: str, seeds: list[str], log_callback=None, event_callback=None,
-            tool_caller=None, live_feed_manager=None) -> dict:
+            tool_caller=None, live_feed_manager=None, check_stop=None) -> dict:
         """Execute the full simulation pipeline."""
         import time
         from packages.core.schemas import new_id
@@ -341,6 +374,7 @@ Use clear headers, bullet points, and structured formatting."""
             live_feed=live_feed_manager,
             log=log,
             emit=emit,
+            check_stop=check_stop,
         )
         log(f"Generated {len(scenarios)} scenario branches")
         emit("agent_debate_finished", {"scenariosCount": len(scenarios)})

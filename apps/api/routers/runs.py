@@ -128,6 +128,7 @@ def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, m
                 debate_style=config_data.get("debate_style", "structured"),
                 critique_strength=config_data.get("critique_strength", "medium"),
                 report_template=config_data.get("report_template", "standard"),
+                endless_mode=config_data.get("endless_mode", False),
             )
 
             adapter = SimulationAdapter(sim_config)
@@ -138,13 +139,20 @@ def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, m
             else:
                 q = question
 
+            def check_stop_cb():
+                conn = get_db()
+                row = conn.execute("SELECT status FROM runs WHERE id=?", (run_id,)).fetchone()
+                conn.close()
+                return row and row["status"] in ["stopped", "failed"]
+
             result = adapter.run(
                 q, 
                 seed_texts, 
                 log_callback=log_cb, 
                 event_callback=event_cb,
                 tool_caller=tool_caller,
-                live_feed_manager=live_feed
+                live_feed_manager=live_feed,
+                check_stop=check_stop_cb
             )
 
             # Score the report
@@ -246,3 +254,12 @@ def list_runs(proj_id: str):
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+@router.post("/runs/{run_id}/stop")
+def stop_run(run_id: str):
+    """Manually stop a running simulation. Useful for escaping Endless Mode."""
+    conn = get_db()
+    conn.execute("UPDATE runs SET status='stopped' WHERE id=? AND status='running'", (run_id,))
+    conn.commit()
+    conn.close()
+    return {"status": "stopping"}

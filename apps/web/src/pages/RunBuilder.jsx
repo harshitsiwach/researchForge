@@ -17,6 +17,7 @@ export default function RunBuilder() {
   const [numRounds, setNumRounds] = useState(8)
   const [debateStyle, setDebateStyle] = useState('structured')
   const [critiqueStrength, setCritiqueStrength] = useState('medium')
+  const [endlessMode, setEndlessMode] = useState(false)
   const [launching, setLaunching] = useState(false)
 
   async function handleLaunch() {
@@ -28,6 +29,7 @@ export default function RunBuilder() {
         num_rounds: numRounds,
         debate_style: debateStyle,
         critique_strength: critiqueStrength,
+        endless_mode: endlessMode,
       })
       navigate(`/run/${result.run_id}`)
     } catch (e) {
@@ -75,8 +77,8 @@ export default function RunBuilder() {
               value={numAgents} onChange={e => setNumAgents(Number(e.target.value))} />
           </div>
           <div className="form-group">
-            <label className="form-label">Number of Rounds</label>
-            <input className="form-input" type="number" min={2} max={20}
+            <label className="form-label" style={{ opacity: endlessMode ? 0.5 : 1 }}>Number of Rounds</label>
+            <input className="form-input" type="number" min={2} max={20} disabled={endlessMode}
               value={numRounds} onChange={e => setNumRounds(Number(e.target.value))} />
           </div>
           <div className="form-group">
@@ -96,6 +98,15 @@ export default function RunBuilder() {
               <option value="strong">Strong</option>
               <option value="aggressive">Aggressive</option>
             </select>
+          </div>
+          <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-sm)' }}>
+            <input type="checkbox" id="endlessToggle" 
+              checked={endlessMode} onChange={e => setEndlessMode(e.target.checked)}
+              style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}/>
+            <div>
+              <label htmlFor="endlessToggle" className="form-label mb-0" style={{ cursor: 'pointer', display: 'block' }}>♾️ Endless Mode (Living Lab)</label>
+              <div className="text-xs text-muted" style={{ marginTop: '2px' }}>Run agents continuously, injecting new live data streams endlessly until manually stopped.</div>
+            </div>
           </div>
         </div>
       </div>

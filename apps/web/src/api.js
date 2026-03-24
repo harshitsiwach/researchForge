@@ -40,6 +40,7 @@ export const createRun = (projId, config) =>
   request(`/projects/${projId}/runs`, { method: 'POST', body: JSON.stringify(config) });
 export const getRun = (runId) => request(`/runs/${runId}`);
 export const listRuns = (projId) => request(`/projects/${projId}/runs`);
+export const stopRun = (runId) => request(`/runs/${runId}/stop`, { method: 'POST' });
 
 // Reports
 export const getReport = (runId) => request(`/runs/${runId}/report`);

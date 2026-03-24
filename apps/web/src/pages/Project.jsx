@@ -70,8 +70,14 @@ export default function Project() {
 
   async function handleAddFeed() {
     if (!newFeed.name) return alert("Please name this feed source")
-    if (newFeed.type === 'rss' && !newFeed.url) return alert("RSS requires a URL")
-    if ((newFeed.type === 'news' || newFeed.type === 'web') && !newFeed.query) return alert("This feed type requires a search query")
+    
+    if (['rss', 'websocket', 'api_poll'].includes(newFeed.type) && !newFeed.url) {
+      return alert("This feed type requires a URL")
+    }
+    
+    if ((newFeed.type === 'news' || newFeed.type === 'web') && !newFeed.query) {
+      return alert("This feed type requires a search query")
+    }
     
     const newSource = {
       id: "fs_" + Date.now(),
@@ -206,12 +212,14 @@ export default function Project() {
               </div>
             )}
             
-            {newFeed.type === 'rss' && (
+            {['rss', 'websocket', 'api_poll'].includes(newFeed.type) && (
               <div className="mb-4" style={{ marginBottom: '16px' }}>
-                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>RSS/Atom URL</label>
+                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>
+                  {newFeed.type === 'websocket' ? 'WebSocket WSS URL' : newFeed.type === 'api_poll' ? 'API Endpoint URL' : 'RSS/Atom URL'}
+                </label>
                 <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
                   style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
-                  placeholder="https://..."
+                  placeholder={newFeed.type === 'websocket' ? 'wss://...' : 'https://...'}
                   value={newFeed.url} onChange={e => setNewFeed({...newFeed, url: e.target.value})} />
               </div>
             )}
@@ -238,7 +246,7 @@ export default function Project() {
                       <span>{fType?.icon || '📡'}</span> {f.name}
                     </div>
                     <div className="text-xs text-muted mt-1" style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      {f.type === 'rss' ? f.url : `Query: "${f.query}"`}
+                      {['rss', 'websocket', 'api_poll'].includes(f.type) ? f.url : `Query: "${f.query}"`}
                     </div>
                   </div>
                   <div className="flex gap-2" style={{ display: 'flex', gap: '8px' }}>
