@@ -7,6 +7,7 @@ import Results from './pages/Results'
 import Compare from './pages/Compare'
 import Settings from './pages/Settings'
 import Toolbox from './pages/Toolbox'
+import AutoResearchMonitor from './pages/AutoResearchMonitor'
 
 function App() {
   const location = useLocation()
@@ -59,6 +60,7 @@ function App() {
           <Route path="/workspace/:wsId/project/:projId/compare" element={<Compare />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/toolbox" element={<Toolbox />} />
+          <Route path="/auto_research/:jobId" element={<AutoResearchMonitor />} />
         </Routes>
       </main>
     </div>

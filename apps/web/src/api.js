@@ -73,3 +73,10 @@ export const configureProjectFeeds = (projId, sources) =>
   request(`/projects/${projId}/feeds`, { method: 'POST', body: JSON.stringify({ sources }) });
 export const testFeedSource = (source) =>
   request('/feeds/test', { method: 'POST', body: JSON.stringify(source) });
+
+// Auto-Researcher
+export const createAutoResearch = (projId, topic) =>
+  request(`/projects/${projId}/auto_research`, { method: 'POST', body: JSON.stringify({ topic }) });
+export const getAutoResearchJob = (jobId) => request(`/auto_research/${jobId}`);
+export const listAutoResearchJobs = (projId) => request(`/projects/${projId}/auto_research`);
+export const stopAutoResearchJob = (jobId) => request(`/auto_research/${jobId}/stop`, { method: 'POST' });

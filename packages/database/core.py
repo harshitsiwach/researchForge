@@ -74,6 +74,18 @@ def init_db():
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS auto_research_jobs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL REFERENCES projects(id),
+        topic TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        working_draft_md TEXT DEFAULT '',
+        log TEXT DEFAULT '',
+        events_jsonl TEXT DEFAULT '',
+        started_at TEXT,
+        finished_at TEXT,
+        error TEXT
+    );
     """)
     conn.commit()
     conn.close()

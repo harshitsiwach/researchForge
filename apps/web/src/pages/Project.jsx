@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getProject, uploadSeed, listSeeds, generateSeed, listRuns, getFeedTypes, getProjectFeeds, configureProjectFeeds, testFeedSource } from '../api'
+import { getProject, uploadSeed, listSeeds, generateSeed, listRuns, getFeedTypes, getProjectFeeds, configureProjectFeeds, testFeedSource, listAutoResearchJobs, createAutoResearch } from '../api'
 
 export default function Project() {
   const { wsId, projId } = useParams()
@@ -8,6 +8,7 @@ export default function Project() {
   const [project, setProject] = useState(null)
   const [seeds, setSeeds] = useState([])
   const [runs, setRuns] = useState([])
+  const [arJobs, setArJobs] = useState([])
   const [uploading, setUploading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const fileRef = useRef()
@@ -26,6 +27,9 @@ export default function Project() {
       setProject(p)
       setSeeds(p.seeds || [])
       setRuns(p.runs || [])
+      
+      const jobs = await listAutoResearchJobs(projId)
+      setArJobs(jobs || [])
       
       const ft = await getFeedTypes()
       setFeedTypes(ft)
@@ -268,7 +272,19 @@ export default function Project() {
       <div className="flex gap-3 mb-4">
         <button className="btn btn-primary"
           onClick={() => navigate(`/workspace/${wsId}/project/${projId}/run/new`)}>
-          🚀 Launch Run
+          🚀 Launch Simulation
+        </button>
+        <button className="btn btn-secondary" style={{ borderColor: 'var(--text-neon)', color: 'var(--text-neon)' }}
+          onClick={async () => {
+            const topic = window.prompt("Enter a topic for the Auto-Researcher:")
+            if(topic) {
+              try {
+                const res = await createAutoResearch(projId, topic)
+                navigate(`/auto_research/${res.job_id}`)
+              } catch(e) { alert("Failed to start Auto-Researcher") }
+            }
+          }}>
+          🤖 Launch Auto-Researcher
         </button>
         {runs.filter(r => r.status === 'completed').length >= 2 && (
           <button className="btn btn-secondary"
@@ -277,6 +293,48 @@ export default function Project() {
           </button>
         )}
       </div>
+
+      {/* Auto-Research Jobs */}
+      {arJobs.length > 0 && (
+        <div className="card mb-4" style={{ borderColor: 'var(--text-neon)' }}>
+          <div className="card-header">
+            <div className="card-title" style={{ color: 'var(--text-neon)' }}>🤖 Auto-Researcher Jobs</div>
+          </div>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job ID</th>
+                  <th>Topic</th>
+                  <th>Status</th>
+                  <th>Started</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {arJobs.map(j => (
+                  <tr key={j.id}>
+                    <td className="font-mono text-sm">{j.id}</td>
+                    <td style={{ maxWidth: 200 }} className="truncate" title={j.topic}>{j.topic}</td>
+                    <td>
+                      <span className={`badge badge-${j.status}`}>
+                        <span className="badge-dot" />
+                        {j.status}
+                      </span>
+                    </td>
+                    <td className="text-sm text-muted">{j.started_at?.slice(0, 19)}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/auto_research/${j.id}`)}>
+                        {j.status === 'running' ? 'Monitor →' : 'View →'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Runs */}
       <div className="card">
