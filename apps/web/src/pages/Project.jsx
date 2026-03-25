@@ -268,31 +268,56 @@ export default function Project() {
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-3 mb-4">
-        <button className="btn btn-primary"
-          onClick={() => navigate(`/workspace/${wsId}/project/${projId}/run/new`)}>
-          🚀 Launch Simulation
-        </button>
-        <button className="btn btn-secondary" style={{ borderColor: 'var(--text-neon)', color: 'var(--text-neon)' }}
+      {/* Launch Options */}
+      <h2 style={{ fontSize: '14px', color: 'var(--text-neon)', letterSpacing: '0.1em', marginBottom: '12px' }}>DEPLOYMENT OPTIONS</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '24px', marginBottom: '32px' }}>
+        
+        {/* Launch Simulation Card */}
+        <div 
+          className="card hover-glow flex flex-col items-center justify-center text-center transition-all bg-gradient-to-b from-transparent to-slate-900/50" 
+          style={{ cursor: 'pointer', padding: '40px 24px', border: '1px solid rgba(255,255,255,0.1)' }}
+          onClick={() => navigate(`/workspace/${wsId}/project/${projId}/run/new`)}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '16px', filter: 'drop-shadow(0 0 20px rgba(99,102,241,0.4))' }}>🚀</div>
+          <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Simulation Lobby</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', maxWidth: '300px' }}>
+            Instantiate a finite or endless multi-agent debate based on your seed materials and configured live data streams.
+          </p>
+        </div>
+
+        {/* Launch Auto-Researcher Card */}
+        <div 
+          className="card flex flex-col items-center justify-center text-center transition-all" 
+          style={{ cursor: 'pointer', padding: '40px 24px', border: '1px solid var(--text-neon)', background: 'rgba(0, 255, 163, 0.05)', boxShadow: '0 0 30px rgba(0, 255, 163, 0.05)' }}
           onClick={async () => {
-            const topic = window.prompt("Enter a topic for the Auto-Researcher:")
+            const topic = window.prompt("Enter a topic for the Auto-Researcher to investigate:")
             if(topic) {
               try {
                 const res = await createAutoResearch(projId, topic)
                 navigate(`/auto_research/${res.job_id}`)
               } catch(e) { alert("Failed to start Auto-Researcher") }
             }
-          }}>
-          🤖 Launch Auto-Researcher
-        </button>
-        {runs.filter(r => r.status === 'completed').length >= 2 && (
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 50px rgba(0, 255, 163, 0.15)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 163, 0.05)' }}
+        >
+          <div style={{ fontSize: '48px', marginBottom: '16px', filter: 'drop-shadow(0 0 20px rgba(0,255,163,0.4))' }}>🤖</div>
+          <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-neon)', marginBottom: '12px' }}>Auto-Researcher</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', maxWidth: '300px' }}>
+            Deploy a master agent that uses tools to gather data and programmatically spawns internal debates to peer-review its findings.
+          </p>
+        </div>
+        
+      </div>
+
+      {runs.filter(r => r.status === 'completed').length >= 2 && (
+        <div className="flex justify-end mb-4">
           <button className="btn btn-secondary"
             onClick={() => navigate(`/workspace/${wsId}/project/${projId}/compare`)}>
             ⚖️ Compare Runs
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Auto-Research Jobs */}
       {arJobs.length > 0 && (

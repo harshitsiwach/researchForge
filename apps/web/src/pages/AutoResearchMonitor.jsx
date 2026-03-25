@@ -1,6 +1,106 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getAutoResearchJob, stopAutoResearchJob } from '../api'
+import PixelScene from '../features/simulation-visualization/components/PixelScene'
+import { useVizStore } from '../features/simulation-visualization/store/visualizationStore'
+
+// A small functional component to render the flowchart based on event history
+function ResearchFlowchart({ events, currentStatus }) {
+  // Derive cycles from events connecting "planning" -> "researching" -> "drafting" -> "simulating" -> "refining"
+  const cycles = []
+  let currentCycle = []
+
+  // Group events by cycle
+  events.forEach(evt => {
+    if (evt.type === 'researcher_status_changed' && evt.status === 'planning') {
+      if (currentCycle.length > 0) cycles.push(currentCycle)
+      currentCycle = [evt]
+    } else {
+      currentCycle.push(evt)
+    }
+  })
+  if (currentCycle.length > 0) cycles.push(currentCycle)
+
+  return (
+    <div className="card" style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', borderColor: 'var(--border)' }}>
+      <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '16px' }}>RESEARCH_FLOWCHART</div>
+      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+        
+        {cycles.length === 0 && (
+          <div className="text-muted text-xs flex items-center justify-center h-full" style={{ opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
+            INITIALIZING_ORCHESTRATOR...
+          </div>
+        )}
+
+        {cycles.map((cycle, i) => {
+          const isLatest = i === cycles.length - 1;
+          const steps = ['planning', 'researching', 'drafting', 'simulating', 'refining'];
+          // Find which step we are currently on in this cycle
+          const statusEvents = cycle.filter(e => e.type === 'researcher_status_changed');
+          const lastStatus = statusEvents.length > 0 ? statusEvents[statusEvents.length - 1].status : 'planning';
+          const lastStatusIdx = steps.indexOf(lastStatus);
+
+          return (
+            <div key={i} style={{ marginBottom: '24px', position: 'relative' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '12px' }}>
+                CYCLE {i + 1}
+              </div>
+              
+              {/* Draw nodes for each step */}
+              {steps.map((step, stepIdx) => {
+                const isActive = isLatest && lastStatusIdx === stepIdx;
+                const isPast = !isLatest || lastStatusIdx > stepIdx;
+                const hasEvent = cycle.find(e => e.type === 'researcher_status_changed' && e.status === step);
+
+                if (!hasEvent && !isActive) return null;
+
+                // Grab interesting metadata for this step
+                let meta = null;
+                if (step === 'researching') {
+                  const toolCall = cycle.find(e => e.type === 'tool_called');
+                  if (toolCall) meta = `Using [${toolCall.toolId}]`;
+                }
+
+                return (
+                  <div key={step} style={{ display: 'flex', gap: '12px', marginBottom: '16px', position: 'relative' }}>
+                    {/* Connection Line */}
+                    {stepIdx < 4 && <div style={{ 
+                      position: 'absolute', left: '11px', top: '24px', bottom: '-16px', width: '2px', 
+                      background: isPast ? 'var(--text-neon)' : 'var(--border)',
+                      zIndex: 1
+                    }} />}
+
+                    {/* Node Dot */}
+                    <div style={{ 
+                      width: '24px', height: '24px', borderRadius: '50%', backgroundColor: isActive ? 'var(--bg-card)' : isPast ? 'var(--text-neon)' : 'var(--bg-secondary)',
+                      border: `2px solid ${isActive ? 'var(--text-neon)' : isPast ? 'var(--text-neon)' : 'var(--border)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2,
+                      boxShadow: isActive ? '0 0 15px var(--text-neon)' : 'none'
+                    }}>
+                      {isActive && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--text-neon)', animation: 'pulse 1.5s infinite' }} />}
+                    </div>
+
+                    {/* Node Content */}
+                    <div style={{ pt: '2px' }}>
+                      <div style={{ 
+                        fontSize: '13px', fontWeight: isActive ? 700 : 500, 
+                        color: isActive ? 'var(--text-primary)' : isPast ? 'var(--text-secondary)' : 'var(--text-muted)',
+                        textTransform: 'capitalize'
+                      }}>
+                        {step}
+                      </div>
+                      {meta && <div style={{ fontSize: '11px', color: 'var(--text-accent)', fontFamily: 'var(--font-mono)', mt: '2px' }}>{meta}</div>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 export default function AutoResearchMonitor() {
   const { jobId } = useParams()
@@ -9,10 +109,11 @@ export default function AutoResearchMonitor() {
   const [job, setJob] = useState(null)
   const [events, setEvents] = useState([])
   const [draft, setDraft] = useState('')
-  const [status, setStatus] = useState('connecting') // connecting, streaming, finished, error
+  const [status, setStatus] = useState('connecting') 
   const [researcherState, setResearcherState] = useState({ status: 'initializing', message: 'Booting up...' })
   
   const eventSourceRef = useRef(null)
+  const { handleEvent: handleVizEvent, disconnect: disconnectViz } = useVizStore()
 
   useEffect(() => {
     loadJob()
@@ -21,6 +122,7 @@ export default function AutoResearchMonitor() {
     return () => {
       clearInterval(interval)
       if (eventSourceRef.current) eventSourceRef.current.close()
+      disconnectViz()
     }
   }, [jobId])
 
@@ -36,6 +138,9 @@ export default function AutoResearchMonitor() {
 
   function connectSSE() {
     if (eventSourceRef.current) eventSourceRef.current.close()
+    
+    // Reset viz store state manually if needed, but disconnect handles it
+    useVizStore.setState({ status: 'streaming', runId: `auto-${jobId}`, agents: {}, timeline: [], debateStats: { active: false, scenariosCount: 0, round: 0 } })
 
     setStatus('connecting')
     const es = new EventSource(`/api/auto_research/${jobId}/events`)
@@ -51,14 +156,19 @@ export default function AutoResearchMonitor() {
           return
         }
         
-        // Append to event log
+        // Append to local event log
         setEvents(prev => [...prev, evt])
 
-        // Handle specific event types
+        // Handle specific orchestrator events
         if (evt.type === 'researcher_status_changed') {
           setResearcherState({ status: evt.status, message: evt.message })
         } else if (evt.type === 'draft_updated') {
           setDraft(evt.draft)
+        }
+
+        // Forward internal simulation events directly to the visualizer store!
+        if (evt.is_mini_sim) {
+          handleVizEvent(evt)
         }
         
       } catch (err) {
@@ -118,10 +228,13 @@ export default function AutoResearchMonitor() {
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr 400px', gap: '24px', height: '700px' }}>
         
-        {/* Left Column: The Working Draft */}
-        <div className="card" style={{ height: '700px', display: 'flex', flexDirection: 'column' }}>
+        {/* Left Column: Research Flowchart */}
+        <ResearchFlowchart events={events} currentStatus={researcherState.status} />
+
+        {/* Middle Column: The Working Draft */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700 }}>SYNTHESIS // WORKING_DRAFT.MD</div>
             <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
@@ -146,8 +259,8 @@ export default function AutoResearchMonitor() {
           </div>
         </div>
 
-        {/* Right Column: Brain state & Event Log */}
-        <div className="flex flex-col gap-4">
+        {/* Right Column: Brain state, Pixel Agents & Event Log */}
+        <div className="flex flex-col gap-4" style={{ height: '100%' }}>
           
           {/* Current Status Box */}
           <div className="card" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
@@ -165,8 +278,18 @@ export default function AutoResearchMonitor() {
             </div>
           </div>
 
+          {/* Pixel Agents Debate Room overlay when simulating */}
+          {researcherState.status === 'simulating' && (
+            <div style={{ flexShrink: 0, height: '220px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid #00ffa3', boxShadow: '0 0 20px rgba(0,255,163,0.15)' }}>
+               {/* We force the PixelScene to render but wrap it so it fits the small container */}
+               <div style={{ transform: 'scale(0.8)', transformOrigin: 'top left', width: '125%', height: '125%' }}>
+                 <PixelScene runId={`auto-${jobId}`} />
+               </div>
+            </div>
+          )}
+
           {/* Activity Log */}
-          <div className="card" style={{ flex: 1, maxHeight: '560px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div className="card" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '16px' }}>THOUGHT_STREAM</div>
             
             <div className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ flex: 1 }}>
