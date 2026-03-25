@@ -8,6 +8,7 @@ import Compare from './pages/Compare'
 import Settings from './pages/Settings'
 import Toolbox from './pages/Toolbox'
 import AutoResearchMonitor from './pages/AutoResearchMonitor'
+import GlobalActiveTaskBar from './components/GlobalActiveTaskBar'
 
 function App() {
   const location = useLocation()
@@ -50,7 +51,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="main-content">
+      <main className="main-content" style={{ paddingBottom: '100px' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/workspace/:wsId/project/:projId" element={<Project />} />
@@ -62,6 +63,8 @@ function App() {
           <Route path="/toolbox" element={<Toolbox />} />
           <Route path="/auto_research/:jobId" element={<AutoResearchMonitor />} />
         </Routes>
+
+        <GlobalActiveTaskBar />
       </main>
     </div>
   )

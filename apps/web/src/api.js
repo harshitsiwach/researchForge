@@ -80,3 +80,6 @@ export const createAutoResearch = (projId, topic) =>
 export const getAutoResearchJob = (jobId) => request(`/auto_research/${jobId}`);
 export const listAutoResearchJobs = (projId) => request(`/projects/${projId}/auto_research`);
 export const stopAutoResearchJob = (jobId) => request(`/auto_research/${jobId}/stop`, { method: 'POST' });
+
+// System
+export const getActiveJobs = () => request('/system/active_jobs');

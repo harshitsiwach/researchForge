@@ -148,7 +148,7 @@ export default function Home() {
               <div style={{ color: 'var(--text-neon)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}>CMD: DEPLOY_PROJECT</div>
               <h2 className="modal-title" style={{ marginBottom: 0 }}>New Subject Analysis</h2>
             </div>
-
+            
             <div className="form-group">
               <label className="form-label">Analysis ID</label>
               <input className="form-input" value={projName} onChange={e => setProjName(e.target.value)}
