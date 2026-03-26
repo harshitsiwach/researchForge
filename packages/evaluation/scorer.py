@@ -20,7 +20,7 @@ from packages.core.json_repair import safe_parse_json
 class Evaluator:
     """Score research reports using an LLM rubric."""
 
-    RUBRIC_PROMPT = """You are a research quality evaluator. Score this report on 6 dimensions (0-10 each):
+    RUBRIC_PROMPT = """You are a research quality evaluator. Score this report on 6 dimensions (0-100 each, where 100 is best):
 
 1. **Usefulness** — How practical is this for making real decisions?
 2. **Consistency** — Are the scenarios internally coherent?
@@ -34,15 +34,16 @@ Research Question: {question}
 Report:
 {report}
 
+CRITICAL: DO NOT copy these example scores below. You MUST generate your OWN scores between 0 and 100 based on the actual report quality.
 Respond ONLY with JSON, no extra text:
 {{
-  "usefulness": 7.5,
-  "consistency": 8.0,
-  "grounding": 6.5,
-  "diversity": 7.0,
-  "clarity": 8.5,
-  "novelty": 6.0,
-  "reasoning": "Brief explanation of scores"
+  "usefulness": 75,
+  "consistency": 82,
+  "grounding": 65,
+  "diversity": 70,
+  "clarity": 85,
+  "novelty": 60,
+  "reasoning": "Brief explanation of your actual generated scores"
 }}"""
 
     def score(self, question: str, report_md: str) -> EvalScore:
@@ -52,20 +53,20 @@ Respond ONLY with JSON, no extra text:
             report=report_md[:4000]
         )
         resp = chat([
-            {"role": "system", "content": "You are a strict research evaluator. Score fairly. Always respond with valid JSON only, no extra text."},
+            {"role": "system", "content": "You are a strict research evaluator. Score fairly from 0-100. Always respond with valid JSON only, no extra text."},
             {"role": "user", "content": prompt}
-        ], temperature=0.2)
+        ], temperature=0.7)
 
         data = safe_parse_json(resp, fallback={})
 
 
         return EvalScore(
-            usefulness=float(data.get("usefulness", 5.0)),
-            consistency=float(data.get("consistency", 5.0)),
-            grounding=float(data.get("grounding", 5.0)),
-            diversity=float(data.get("diversity", 5.0)),
-            clarity=float(data.get("clarity", 5.0)),
-            novelty=float(data.get("novelty", 5.0)),
+            usefulness=float(data.get("usefulness", 50.0)),
+            consistency=float(data.get("consistency", 50.0)),
+            grounding=float(data.get("grounding", 50.0)),
+            diversity=float(data.get("diversity", 50.0)),
+            clarity=float(data.get("clarity", 50.0)),
+            novelty=float(data.get("novelty", 50.0)),
         )
 
     def compare(self, question: str, baseline_md: str, challenger_md: str,
@@ -77,10 +78,10 @@ Respond ONLY with JSON, no extra text:
         b_comp = baseline_score.composite
         c_comp = challenger_score.composite
 
-        if c_comp > b_comp + 0.3:
+        if c_comp > b_comp + 3.0:
             winner = "challenger"
             rec = "Challenger shows meaningful improvement. Recommend promotion."
-        elif b_comp > c_comp + 0.3:
+        elif b_comp > c_comp + 3.0:
             winner = "baseline"
             rec = "Baseline remains stronger. Keep current configuration."
         else:

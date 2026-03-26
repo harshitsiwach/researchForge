@@ -159,7 +159,7 @@ def _launch_run(run_id, proj_id, config_id, config_data, question, seed_texts, m
             log_cb("Evaluating report quality...")
             evaluator = Evaluator()
             score = evaluator.score(q, result["report_md"])
-            log_cb(f"Eval complete — composite: {score.composite:.1f}/10")
+            log_cb(f"Eval complete — composite: {score.composite:.1f}%")
 
             # Save report
             report_id = new_id("rpt")

@@ -4,9 +4,9 @@ import { getReport } from '../api'
 
 function ScoreBar({ label, value, icon }) {
   const getColor = (v) => {
-    if (v >= 8) return '#34d399'
-    if (v >= 6) return '#818cf8'
-    if (v >= 4) return '#fbbf24'
+    if (v >= 80) return '#34d399'
+    if (v >= 60) return '#818cf8'
+    if (v >= 40) return '#fbbf24'
     return '#f87171'
   }
   return (
@@ -14,7 +14,7 @@ function ScoreBar({ label, value, icon }) {
       <span className="score-label">{icon} {label}</span>
       <div className="score-bar">
         <div className="score-fill" style={{
-          width: `${(value / 10) * 100}%`,
+          width: `${value}%`,
           background: `linear-gradient(90deg, ${getColor(value)}88, ${getColor(value)})`,
         }} />
       </div>
@@ -196,7 +196,7 @@ export default function Results() {
           <div style={{ fontSize: 48, fontWeight: 700, color: 'var(--text-accent)', lineHeight: 1 }}>
             {composite.toFixed(1)}
           </div>
-          <div className="text-sm text-muted mt-2">out of 10</div>
+          <div className="text-sm text-muted mt-2">out of 100</div>
           <div className="flex gap-4 mt-4" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
             {Object.entries(score).map(([k, v]) => (
               <div key={k} style={{
@@ -205,7 +205,7 @@ export default function Results() {
                 fontSize: 12,
               }}>
                 <span className="text-muted">{k}: </span>
-                <span style={{ fontWeight: 600, color: v >= 7 ? 'var(--success)' : v >= 5 ? 'var(--text-accent)' : 'var(--warning)' }}>{v.toFixed(1)}</span>
+                <span style={{ fontWeight: 600, color: v >= 70 ? 'var(--success)' : v >= 50 ? 'var(--text-accent)' : 'var(--warning)' }}>{v.toFixed(1)}</span>
               </div>
             ))}
           </div>
@@ -281,8 +281,8 @@ export default function Results() {
                 background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)',
                 textAlign: 'center',
               }}>
-                <div style={{ fontSize: 28, fontWeight: 700, color: composite >= 7 ? 'var(--success)' : composite >= 5 ? 'var(--text-accent)' : 'var(--warning)' }}>
-                  {composite >= 7 ? 'A' : composite >= 5 ? 'B' : 'C'}
+                <div style={{ fontSize: 28, fontWeight: 700, color: composite >= 70 ? 'var(--success)' : composite >= 50 ? 'var(--text-accent)' : 'var(--warning)' }}>
+                  {composite >= 70 ? 'A' : composite >= 50 ? 'B' : 'C'}
                 </div>
                 <div className="text-sm text-muted">Grade</div>
               </div>
