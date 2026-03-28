@@ -28,19 +28,17 @@ Footer {
     margin: 1 2;
     padding: 1 2;
     background: #111827;
-    border: rounded #6366f1;
+    border: round #6366f1;
 }
 
 .kpi-label {
     color: #94a3b8;
-    text-transform: uppercase;
     text-style: bold;
 }
 
 .kpi-value {
     color: #34d399;
     text-style: bold;
-    font-size: 200%;
 }
 
 .status-running {
@@ -76,7 +74,7 @@ Button:hover {
 DataTable {
     background: #0a0e1a;
     color: #e2e8f0;
-    border: rounded #1e293b;
+    border: round #1e293b;
 }
 
 DataTable > .datatable--header {
