@@ -10,207 +10,183 @@ from textual.containers import Container, Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import (
     Button,
-    DataTable,
     Footer,
     Header,
+    Input,
     Label,
     Log,
-    ProgressBar,
     Static,
-    Tree,
 )
+from textual.events import Key
 from textual.worker import Worker, WorkerState
 
 from apps.tui.api import ResearchForgeAPI
 
-class KPIContainer(Static):
-    """A widget to display Key Performance Indicators."""
-    def __init__(self, label: str, value: str, classes: str = ""):
-        super().__init__("", classes=f"kpi-card {classes}")
-        self._label = label
-        self._value = value
+class PromptInput(Input):
+    """An input field with command history navigating via up/down arrows."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.history = []
+        self.history_index = -1
 
-    def compose(self) -> ComposeResult:
-        yield Label(self._label, classes="kpi-label")
-        yield Label(self._value, classes="kpi-value")
+    def add_to_history(self, text: str):
+        if text and (not self.history or self.history[-1] != text):
+            self.history.append(text)
+        self.history_index = len(self.history)
 
-class LogoHeader(Static):
-    """The ResearchForge branding header with ASCII art."""
-    def compose(self) -> ComposeResult:
-        yield Label(r"""
-  _____                               _      ______                     
- |  __ \                             | |    |  ____|                    
- | |__) |___  ___  ___  __ _ _ __ ___| |__  | |__ ___  _ __ __ _  ___ 
- |  _  // _ \/ __|/ _ \/ _` | '__/ __| '_ \ |  __/ _ \| '__/ _` |/ _ \
- | | \ \  __/\__ \  __/ (_| | | | (__| | | || | | (_) | | | (_| |  __/
- |_|  \_\___||___/\___|\__,_|_|  \___|_| |_||_|  \___/|_|  \__, |\___|
-                                                            __/ |     
-                                                           |___/      
-""", id="logo-ascii")
-        yield Label("TERMINAL_INTELLIGENCE_SYSTEM // V0.1.0-ALPHA", id="tagline")
+    async def on_key(self, event: Key):
+        """Handle up/down arrow keys for history navigation."""
+        if event.key == "up":
+            # Prevent moving cursor to start of line in textual natively
+            event.prevent_default()
+            if self.history and self.history_index > 0:
+                self.history_index -= 1
+                self.value = self.history[self.history_index]
+        elif event.key == "down":
+            event.prevent_default()
+            if self.history and self.history_index < len(self.history) - 1:
+                self.history_index += 1
+                self.value = self.history[self.history_index]
+            else:
+                self.history_index = len(self.history)
+                self.value = ""
 
-class DashboardScreen(Screen):
-    """The main view showing system health and active work."""
+class ChatScreen(Screen):
+    """The central conversational interface."""
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        yield LogoHeader()
-        with Container(id="dashboard"):
-            with Horizontal(id="kpi-row"):
-                self.ws_kpi = KPIContainer("Workspaces", "...", classes="ws-kpi")
-                self.jobs_kpi = KPIContainer("Active Jobs", "...", classes="jobs-kpi")
-                self.reports_kpi = KPIContainer("Reports", "...", classes="reports-kpi")
-                yield self.ws_kpi
-                yield self.jobs_kpi
-                yield self.reports_kpi
-            
-            with Vertical(id="activity-section"):
-                yield Label("ACTIVE RUNS", classes="section-title")
-                yield DataTable(id="active-runs-table")
+        yield Log(id="chat-log", markup=True, wrap=True)
+        with Container(id="input-container"):
+            yield PromptInput(placeholder="Type your research prompt or /help for commands...", id="prompt-input")
         yield Footer()
 
     async def on_mount(self) -> None:
-        table = self.query_one("#active-runs-table", DataTable)
-        table.add_columns("Run ID", "Project ID", "Mode", "Started At", "Action")
-        table.cursor_type = "row"
-        self.update_stats()
+        self.chat_log = self.query_one("#chat-log", Log)
+        self.prompt_input = self.query_one("#prompt-input", PromptInput)
+        self.prompt_input.focus()
 
-    @on(DataTable.RowSelected)
-    def on_row_selected(self, event: DataTable.RowSelected) -> None:
-        run_id = event.row_key.value
-        if run_id:
-            self.app.push_screen(SimulationMonitorScreen(run_id=run_id))
+        # Welcome message
+        self.log_msg("system", "System initialized. Connected to local AI broker.")
+        self.log_msg("system", "Type [bold]/help[/bold] to see available commands.")
+
+    def log_msg(self, role: str, text: str):
+        """Append a colored message to the log view."""
+        if role == "user":
+            self.chat_log.write_line(f"[bold #6366f1]❯ You:[/bold #6366f1] {text}")
+        elif role == "agent":
+            self.chat_log.write_line(f"[bold #34d399]🤖 Agent:[/bold #34d399] {text}")
+        elif role == "system":
+            self.chat_log.write_line(f"[italic #94a3b8]{text}[/italic #94a3b8]")
+        elif role == "tool":
+            self.chat_log.write_line(f"[bold #f59e0b]🔧 Tool:[/bold #f59e0b] {text}")
+        elif role == "error":
+            self.chat_log.write_line(f"[bold #ef4444]✖ Error:[/bold #ef4444] {text}")
+        
+        self.chat_log.scroll_end(animate=False)
+
+    @on(Input.Submitted, "#prompt-input")
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        text = event.value.strip()
+        if not text:
+            return
+            
+        # Add to history
+        self.prompt_input.add_to_history(text)
+        
+        # Clear input field
+        self.prompt_input.value = ""
+        
+        # Display user input in log
+        self.log_msg("user", text)
+
+        # Handle commands vs prompts
+        if text.startswith("/"):
+            self.handle_slash_command(text)
+        else:
+            self.handle_prompt(text)
+
+    def handle_slash_command(self, cmd_text: str):
+        parts = cmd_text.split()
+        cmd = parts[0].lower()
+
+        if cmd == "/help":
+            self.log_msg("system", "Available commands:\n  /help - Show this message\n  /clear - Clear the screen\n  /status - Check backend connection\n  /projects - List available workspaces and projects\n  /quit - Exit terminal")
+        elif cmd == "/clear":
+            self.chat_log.clear()
+        elif cmd == "/quit":
+            self.app.exit()
+        elif cmd == "/status":
+            self.log_msg("system", "Checking backend status...")
+            self.execute_status()
+        elif cmd == "/projects":
+            self.log_msg("system", "Fetching laboratory projects...")
+            self.execute_projects()
+        else:
+            self.log_msg("error", f"Unknown command: {cmd}")
 
     @work(exclusive=True)
-    async def update_stats(self) -> None:
-        """Fetch and update dashboard stats from the API."""
+    async def execute_status(self) -> None:
+        api = self.app.api
+        try:
+            jobs = await api.get_active_jobs()
+            runs = len(jobs.get("runs", []))
+            ar_jobs = len(jobs.get("auto_research_jobs", []))
+            self.log_msg("agent", f"System Status: [bold bright_green]ONLINE[/]\nActive Simulations: {runs}\nActive Auto-Researchers: {ar_jobs}")
+            
+            for index, run in enumerate(jobs.get("runs", [])):
+                self.log_msg("agent", f"  • Sim [{run['id']}] ({run['mode']}) - {run['status']}")
+
+        except Exception as e:
+            self.log_msg("error", f"Backend offline or unreachable. ({e})")
+
+    @work(exclusive=True)
+    async def execute_projects(self) -> None:
         api = self.app.api
         try:
             workspaces = await api.get_workspaces()
-            jobs = await api.get_active_jobs()
+            if not workspaces:
+                self.log_msg("agent", "Database is empty. No workspaces found.")
+                return
+                
+            out = ["Laboratory Directory:"]
+            for ws in workspaces:
+                out.append(f"📁 [bold]{ws['name']}[/bold]")
+                ws_details = await api.get_workspace(ws["id"])
+                for proj in ws_details.get("projects", []):
+                    out.append(f"  └─ 📄 {proj['name']} ({proj.get('question', 'No question')})")
             
-            # Update KPI Values
-            self.ws_kpi.query_one(".kpi-value").update(str(len(workspaces)))
-            self.jobs_kpi.query_one(".kpi-value").update(str(jobs.get("total_active", 0)))
-            self.reports_kpi.query_one(".kpi-value").update(str(jobs.get("total_reports", 0)))
-            
-            # Update Active Runs Table
-            table = self.query_one("#active-runs-table", DataTable)
-            table.clear()
-            for run in jobs.get("runs", []):
-                table.add_row(
-                    run["id"], 
-                    run["project_id"], 
-                    run["mode"], 
-                    run["started_at"][:19], 
-                    "[ENTER] Monitor",
-                    key=run["id"]
-                )
+            self.log_msg("agent", "\n".join(out))
         except Exception as e:
-            self.app.notify(f"Connection failed: {e}", severity="error")
+            self.log_msg("error", f"Failed to fetch projects. ({e})")
 
-class SimulationMonitorScreen(Screen):
-    """Real-time monitoring of a specific research simulation."""
-    def __init__(self, run_id: str):
-        super().__init__()
-        self.run_id = run_id
-
-    def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
-        with Container(classes="monitor-container"):
-            yield Label(f"MONITORING RUN: {self.run_id}", id="monitor-title")
-            self.progress = ProgressBar(total=100, show_percentage=True, id="monitor-progress")
-            yield self.progress
-            with Horizontal(id="monitor-body"):
-                self.log_panel = Log(classes="log-panel", id="simulation-log")
-                yield self.log_panel
-                with Vertical(id="monitor-sidebar"):
-                    yield Label("SCENARIOS", classes="sidebar-title")
-                    self.scenarios_list = Static("Waiting for scenarios...", id="scenarios-preview")
-                    yield self.scenarios_list
-        yield Footer()
-
-    BINDINGS = [
-        Binding("escape", "app.pop_screen", "Back to Dashboard"),
-    ]
-
-    async def on_mount(self) -> None:
-        self.start_monitoring()
+    def handle_prompt(self, prompt: str):
+        """Simulate sending prompt to research backend."""
+        self.log_msg("system", f"Dispatching query: '{prompt}'")
+        self.run_mock_research(prompt)
 
     @work(exclusive=True)
-    async def start_monitoring(self) -> None:
-        """Subscribe to SSE events and append logs."""
-        api = self.app.api
-        async for event in api.stream_run_events(self.run_id):
-            if event.get("type") == "error":
-                self.log_panel.write_line(f"[ERR] {event.get('message')}")
-            else:
-                timestamp = event.get("timestamp", 0)
-                msg = event.get("message", event.get("type", "Event"))
-                data = event.get("data", "")
-                
-                # Colorize based on event type
-                if event.get("type") == "agent_debate_started":
-                    self.log_panel.write_line(f"[bold cyan]{msg}[/bold cyan] {data}")
-                elif event.get("type") == "tool_called":
-                    self.log_panel.write_line(f"[yellow]🔧 {msg}[/yellow] {data}")
-                else:
-                    self.log_panel.write_line(f"[{msg}] {data}")
-
-                if "round" in event:
-                    self.progress.advance(10)
-                
-                # Update scenarios list if found
-                if event.get("type") == "agent_debate_finished":
-                    scenarios_count = event.get("scenariosCount", 0)
-                    self.scenarios_list.update(f"✨ Found {scenarios_count} scenarios.\n\nVisit the Web UI or\nExport MD to view details.")
-
-class ProjectExplorerScreen(Screen):
-    """Browse workspaces and projects in a tree view."""
-    def compose(self) -> ComposeResult:
-        yield Header(show_clock=True)
-        yield LogoHeader()
-        with Horizontal():
-            yield Tree("LABORATORY WORKSPACES", id="project-tree", classes="sidebar")
-            with Vertical(id="project-details"):
-                yield Label("SELECT A PROJECT", id="details-title")
-                yield Static(id="project-info")
-        yield Footer()
-
-    async def on_mount(self) -> None:
-        tree = self.query_one("#project-tree", Tree)
-        tree.root.expand()
-        self.load_projects()
-
-    @work(exclusive=True)
-    async def load_projects(self) -> None:
-        api = self.app.api
-        workspaces = await api.get_workspaces()
-        tree = self.query_one("#project-tree", Tree)
-        tree.clear()
+    async def run_mock_research(self, query: str):
+        # In the future, this will POST to the API to run auto-research and stream the response
+        await asyncio.sleep(0.5)
+        self.log_msg("tool", "web_search(query=\"" + query + "\")")
+        await asyncio.sleep(1.2)
+        self.log_msg("tool", "Processing 4 results from web search...")
+        await asyncio.sleep(1.0)
+        self.log_msg("agent", "Research complete. The data suggests that this is a complex topic requiring multi-agent simulation to fully resolve. \n\nI have drafted an initial Seed background based on live facts. Would you like me to trigger a deeper debate? (Type Yes/No in future update)")
         
-        for ws in workspaces:
-            ws_node = tree.root.add(f"📁 {ws['name']}", data=ws)
-            # Fetch workspace details for projects
-            ws_details = await api.get_workspace(ws["id"])
-            for proj in ws_details.get("projects", []):
-                ws_node.add_leaf(f"📄 {proj['name']}", data=proj)
 
 class ResearchForgeTUI(App):
-
-    """The main ResearchForge Terminal application."""
+    """The main ResearchForge Conversational Terminal."""
 
     CSS_PATH = "styles.tcss"
     BINDINGS = [
-        Binding("q", "quit", "Quit", show=True),
-        Binding("d", "switch_screen('dashboard')", "Dashboard", show=True),
-        Binding("p", "switch_screen('projects')", "Projects", show=True),
-        Binding("r", "refresh", "Refresh Data", show=True),
+        Binding("ctrl+c", "quit", "Quit", show=False),
+        Binding("ctrl+l", "clear", "Clear Screen", show=False),
     ]
 
     SCREENS = {
-        "dashboard": DashboardScreen,
-        "projects": ProjectExplorerScreen,
+        "chat": ChatScreen,
     }
 
     def __init__(self):
@@ -218,18 +194,16 @@ class ResearchForgeTUI(App):
         self.api = ResearchForgeAPI()
 
     def compose(self) -> ComposeResult:
-        yield Header()
-        yield Container(id="root")
-        yield Footer()
+        # We start on the chat screen immediately
+        yield Container()
 
     async def on_mount(self) -> None:
-        self.title = "RESEARCHFORGE // LABORATORY TERMINAL"
-        self.sub_title = "v0.1.0-alpha"
-        self.push_screen("dashboard")
-
-    def action_refresh(self) -> None:
-        """Refresh the active screen's data."""
-        pass
+        self.title = "RESEARCHFORGE // CONVERSATIONAL CLI"
+        self.sub_title = "v0.2.0-chat-pivot"
+        self.push_screen("chat")
+        
+    def action_clear(self) -> None:
+        self.screen.chat_log.clear()
 
 if __name__ == "__main__":
     app = ResearchForgeTUI()

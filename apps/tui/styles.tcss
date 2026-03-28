@@ -1,134 +1,69 @@
-/* ResearchForge Cyber-Lab TUI Style Sheet */
+/* ResearchForge Conversational CLI Stylesheet */
 
 Screen {
-    background: #0a0e1a;
+    background: #000000;
     color: #e2e8f0;
 }
 
 Header {
-    background: #1e293b;
+    background: #0f172a;
     color: #34d399;
     text-style: bold;
     border-bottom: solid #34d399;
 }
 
 Footer {
-    background: #1e293b;
-    color: #94a3b8;
-}
-
-#sidebar {
-    width: 30;
     background: #0f172a;
-    border-right: tall #1e293b;
-}
-
-.kpi-card {
-    height: 7;
-    margin: 1 2;
-    padding: 1 2;
-    background: #111827;
-    border: round #6366f1;
-}
-
-.kpi-label {
     color: #94a3b8;
-    text-style: bold;
 }
 
-.kpi-value {
-    color: #34d399;
-    text-style: bold;
-}
-
-.status-running {
-    color: #34d399;
-}
-
-.status-stopped {
-    color: #f87171;
-}
-
-.log-panel {
-    border: solid #6366f1;
-    background: #000000;
-    color: #10b981;
-    padding: 1;
-}
-
-Log {
-    background: #000000;
-    color: #10b981;
-}
-
-Button {
-    background: #6366f1;
-    color: white;
+#chat-log {
+    height: 1fr;
     border: none;
-}
-
-Button:hover {
-    background: #4f46e5;
-}
-
-DataTable {
-    background: #0a0e1a;
-    color: #e2e8f0;
-    border: round #1e293b;
-}
-
-DataTable > .datatable--header {
-    background: #1e293b;
-    color: #34d399;
-    text-style: bold;
-}
-
-DataTable > .datatable--cursor {
-    background: #6366f1;
-    color: white;
-}
-
-#logo-ascii {
-    color: #34d399;
-    background: #0a0e1a;
-    width: 100%;
-    text-align: center;
-}
-
-#tagline {
-    color: #475569;
-    text-align: center;
-    width: 100%;
-    margin-bottom: 1;
-}
-
-#monitor-title {
-    background: #1e293b;
-    color: #34d399;
+    background: #000000;
     padding: 0 1;
-    text-style: bold;
+    overflow-y: scroll;
 }
 
-#monitor-progress {
-    margin: 1 2;
+#input-container {
+    height: auto;
+    dock: bottom;
     background: #0f172a;
-    color: #34d399;
-}
-
-#monitor-sidebar {
-    width: 40;
-    border-left: tall #1e293b;
     padding: 1;
+    border-top: solid #1e293b;
 }
 
-.sidebar-title {
+PromptInput {
+    border: none;
+    background: #0f172a;
+    color: #e2e8f0;
+    width: 100%;
+}
+
+PromptInput:focus {
+    border: none;
+    outline: none;
+}
+
+/* User vs Agent styling in log */
+.msg-user {
     color: #6366f1;
     text-style: bold;
-    margin-bottom: 1;
 }
 
-#scenarios-preview {
+.msg-agent {
+    color: #34d399;
+}
+
+.msg-system {
     color: #94a3b8;
-    background: #111827;
-    padding: 1;
+    text-style: italic;
+}
+
+.msg-tool {
+    color: #f59e0b;
+}
+
+.msg-error {
+    color: #ef4444;
 }
