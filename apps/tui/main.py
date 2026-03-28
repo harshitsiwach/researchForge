@@ -14,7 +14,7 @@ from textual.widgets import (
     Header,
     Input,
     Label,
-    Log,
+    RichLog,
     Static,
 )
 from textual.events import Key
@@ -56,13 +56,13 @@ class ChatScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
-        yield Log(id="chat-log", markup=True, wrap=True)
+        yield RichLog(id="chat-log", markup=True, wrap=True)
         with Container(id="input-container"):
             yield PromptInput(placeholder="Type your research prompt or /help for commands...", id="prompt-input")
         yield Footer()
 
     async def on_mount(self) -> None:
-        self.chat_log = self.query_one("#chat-log", Log)
+        self.chat_log = self.query_one("#chat-log", RichLog)
         self.prompt_input = self.query_one("#prompt-input", PromptInput)
         self.prompt_input.focus()
 
