@@ -253,12 +253,17 @@ Output ONLY valid JSON for this single round:
             round_num += 1
 
         # Now generate the final scenario synthesis
-        prompt = f"""Based on the {len(all_rounds)} rounds of structured debate, generate 3-5 distinct scenario branches showing different plausible futures.
+        prompt = f"""Based on the {len(all_rounds)} rounds of structured debate, synthesize the outcome into scenario branches.
 
 Research Question: {question}
 
 Full Debate Summary:
 {json.dumps(all_rounds, indent=1)[:6000]}
+
+INSTRUCTIONS FOR SCENARIOS:
+1. If the question asks to compare multiple entities (e.g., "who will win the tournament", "which stock will perform best"), generate one scenario branch PER ENTITY (e.g., one for each team), outlining their specific chance of winning and the key drivers behind it. Ensure the total probability percentage across all mutually exclusive entities adds up to roughly 100.
+2. If the question is a Yes/No or binary outcome (e.g., "will the market crash"), generate two main scenarios: one for Yes, one for No, with their respective percentage probabilities.
+3. For open-ended generative questions, generate 3-5 distinct plausible futures.
 
 Respond in JSON format only, no extra text:
 {{
