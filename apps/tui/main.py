@@ -73,15 +73,15 @@ class ChatScreen(Screen):
     def log_msg(self, role: str, text: str):
         """Append a colored message to the log view."""
         if role == "user":
-            self.chat_log.write_line(f"[bold #6366f1]❯ You:[/bold #6366f1] {text}")
+            self.chat_log.write(f"[bold #6366f1]❯ You:[/bold #6366f1] {text}")
         elif role == "agent":
-            self.chat_log.write_line(f"[bold #34d399]🤖 Agent:[/bold #34d399] {text}")
+            self.chat_log.write(f"[bold #34d399]🤖 Agent:[/bold #34d399] {text}")
         elif role == "system":
-            self.chat_log.write_line(f"[italic #94a3b8]{text}[/italic #94a3b8]")
+            self.chat_log.write(f"[italic #94a3b8]{text}[/italic #94a3b8]")
         elif role == "tool":
-            self.chat_log.write_line(f"[bold #f59e0b]🔧 Tool:[/bold #f59e0b] {text}")
+            self.chat_log.write(f"[bold #f59e0b]🔧 Tool:[/bold #f59e0b] {text}")
         elif role == "error":
-            self.chat_log.write_line(f"[bold #ef4444]✖ Error:[/bold #ef4444] {text}")
+            self.chat_log.write(f"[bold #ef4444]✖ Error:[/bold #ef4444] {text}")
         
         self.chat_log.scroll_end(animate=False)
 
