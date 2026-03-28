@@ -209,8 +209,8 @@ class ResearchForgeTUI(App):
     ]
 
     SCREENS = {
-        "dashboard": DashboardScreen(),
-        "projects": ProjectExplorerScreen(),
+        "dashboard": DashboardScreen,
+        "projects": ProjectExplorerScreen,
     }
 
     def __init__(self):
