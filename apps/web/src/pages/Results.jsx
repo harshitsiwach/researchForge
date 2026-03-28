@@ -25,12 +25,14 @@ function ScoreBar({ label, value, icon }) {
 
 function ScenarioCard({ scenario, index }) {
   const [expanded, setExpanded] = useState(false)
-  const probColors = {
-    high: { bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: '🟢' },
-    medium: { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: '🟡' },
-    low: { bg: 'rgba(248,113,113,0.12)', color: '#f87171', icon: '🔴' },
-  }
-  const prob = probColors[scenario.probability_assessment?.toLowerCase()] || probColors.medium
+  const probNum = typeof scenario.probability_percentage === 'number' 
+    ? scenario.probability_percentage 
+    : parseInt(scenario.probability_percentage) || parseInt(scenario.probability_assessment) || 50;
+
+  let prob;
+  if (probNum >= 70) prob = { bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: '🟢' };
+  else if (probNum >= 30) prob = { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: '🟡' };
+  else prob = { bg: 'rgba(248,113,113,0.12)', color: '#f87171', icon: '🔴' };
 
   return (
     <div className="card" style={{ border: '1px solid var(--border)', cursor: 'pointer' }}
@@ -46,12 +48,12 @@ function ScenarioCard({ scenario, index }) {
           </div>
           <div>
             <div className="card-title" style={{ fontSize: 15 }}>{scenario.title || `Scenario ${index + 1}`}</div>
-            {scenario.probability_assessment && (
+            {(scenario.probability_percentage !== undefined || scenario.probability_assessment) && (
               <span style={{
                 fontSize: 11, padding: '2px 8px', borderRadius: 12,
                 background: prob.bg, color: prob.color, fontWeight: 600,
               }}>
-                {prob.icon} {scenario.probability_assessment} probability
+                {prob.icon} {scenario.probability_percentage !== undefined ? `${probNum}%` : scenario.probability_assessment} probability
               </span>
             )}
           </div>

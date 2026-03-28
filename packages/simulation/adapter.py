@@ -266,8 +266,8 @@ Respond in JSON format only, no extra text:
     {{
       "id": "S1",
       "title": "...",
-      "description": "...",
-      "probability_assessment": "high/medium/low",
+      "description": "Detailed explanation of the scenario",
+      "probability_percentage": 75,
       "key_drivers": ["..."],
       "risks": ["..."],
       "opportunities": ["..."]
