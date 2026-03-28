@@ -115,6 +115,10 @@ researchforge/
 │   │       ├── reports.py
 │   │       ├── compare.py
 │   │       └── app_settings.py
+│   ├── tui/                 # Conversational CLI (Textual)
+│   │   ├── main.py          # Chat interface entry point
+│   │   ├── api.py           # Async backend client
+│   │   └── styles.tcss      # Cyber-Lab terminal theme
 │   └── web/                 # Vite + React frontend
 │       └── src/
 │           ├── App.jsx      # Root component + routing
@@ -222,6 +226,30 @@ Tune the simulation: number of agents (4–16), rounds (4–20), debate style, a
 ### 5. Compare & Improve
 
 Run two simulations with different configs, then use **Compare** to see which produced better research. Promote the winner as your new baseline.
+
+---
+
+## 🖥️ Terminal Interface (RFT)
+
+ResearchForge includes a professional-grade **Conversational CLI** that mimics the experience of Claude Code and Gemini CLI, allowing you to manage your laboratory directly from your dev console.
+
+### Key Features
+- **Chat-Driven Research**: Talk to the ResearchForge agents natively.
+- **Slash Commands (`/`)**: Fast navigation via `/projects`, `/status`, `/help`, and more.
+- **Arrow Key History**: Full support for Up/Down arrow keys to navigate command history.
+- **Cyber-Lab Aesthetic**: Premium, neon-accented terminal visuals powered by Textual CSS.
+
+### How to Launch
+
+The TUI depends on `textual` and `httpx`. We recommend using `uv` or a virtual environment for the best experience:
+
+```bash
+# 1. Install RFT dependencies
+uv pip install textual httpx
+
+# 2. Launch the Laboratory Terminal
+PYTHONPATH=. python3 apps/tui/main.py
+```
 
 ---
 
