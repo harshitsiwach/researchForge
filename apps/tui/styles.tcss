@@ -1,0 +1,91 @@
+/* ResearchForge Cyber-Lab TUI Style Sheet */
+
+Screen {
+    background: #0a0e1a;
+    color: #e2e8f0;
+}
+
+Header {
+    background: #1e293b;
+    color: #34d399;
+    text-style: bold;
+    border-bottom: solid #34d399;
+}
+
+Footer {
+    background: #1e293b;
+    color: #94a3b8;
+}
+
+#sidebar {
+    width: 30;
+    background: #0f172a;
+    border-right: tall #1e293b;
+}
+
+.kpi-card {
+    height: 7;
+    margin: 1 2;
+    padding: 1 2;
+    background: #111827;
+    border: rounded #6366f1;
+}
+
+.kpi-label {
+    color: #94a3b8;
+    text-transform: uppercase;
+    text-style: bold;
+}
+
+.kpi-value {
+    color: #34d399;
+    text-style: bold;
+    font-size: 200%;
+}
+
+.status-running {
+    color: #34d399;
+}
+
+.status-stopped {
+    color: #f87171;
+}
+
+.log-panel {
+    border: solid #6366f1;
+    background: #000000;
+    color: #10b981;
+    padding: 1;
+}
+
+Log {
+    background: #000000;
+    color: #10b981;
+}
+
+Button {
+    background: #6366f1;
+    color: white;
+    border: none;
+}
+
+Button:hover {
+    background: #4f46e5;
+}
+
+DataTable {
+    background: #0a0e1a;
+    color: #e2e8f0;
+    border: rounded #1e293b;
+}
+
+DataTable > .datatable--header {
+    background: #1e293b;
+    color: #34d399;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: #6366f1;
+    color: white;
+}
