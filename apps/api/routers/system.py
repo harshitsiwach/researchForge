@@ -16,11 +16,16 @@ async def get_active_jobs():
     # Get running auto-research jobs
     cursor.execute("SELECT id, project_id, topic, status, started_at FROM auto_research_jobs WHERE status = 'running'")
     ar_jobs = [dict(j) for j in cursor.fetchall()]
+
+    # Get total report count
+    cursor.execute("SELECT COUNT(*) FROM reports")
+    total_reports = cursor.fetchone()[0]
     
     conn.close()
     
     return {
         "runs": runs,
         "auto_research_jobs": ar_jobs,
-        "total_active": len(runs) + len(ar_jobs)
+        "total_active": len(runs) + len(ar_jobs),
+        "total_reports": total_reports
     }

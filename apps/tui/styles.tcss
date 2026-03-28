@@ -89,3 +89,48 @@ DataTable > .datatable--cursor {
     background: #6366f1;
     color: white;
 }
+
+#logo-ascii {
+    color: #34d399;
+    background: #0a0e1a;
+    width: 100%;
+    text-align: center;
+}
+
+#tagline {
+    color: #475569;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 1;
+}
+
+#monitor-title {
+    background: #1e293b;
+    color: #34d399;
+    padding: 0 1;
+    text-style: bold;
+}
+
+#monitor-progress {
+    margin: 1 2;
+    background: #0f172a;
+    color: #34d399;
+}
+
+#monitor-sidebar {
+    width: 40;
+    border-left: tall #1e293b;
+    padding: 1;
+}
+
+.sidebar-title {
+    color: #6366f1;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#scenarios-preview {
+    color: #94a3b8;
+    background: #111827;
+    padding: 1;
+}

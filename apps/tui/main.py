@@ -35,11 +35,19 @@ class KPIContainer(Static):
         yield Label(self._value, classes="kpi-value")
 
 class LogoHeader(Static):
-    """The ResearchForge branding header."""
+    """The ResearchForge branding header with ASCII art."""
     def compose(self) -> ComposeResult:
-        # Ascii art or stylized title
-        yield Label("RESEARCHFORGE // LABORATORY", id="logo-text")
-        yield Label("TERMINAL_INTELLIGENCE_SYSTEM", id="tagline")
+        yield Label(r"""
+  _____                               _      ______                     
+ |  __ \                             | |    |  ____|                    
+ | |__) |___  ___  ___  __ _ _ __ ___| |__  | |__ ___  _ __ __ _  ___ 
+ |  _  // _ \/ __|/ _ \/ _` | '__/ __| '_ \ |  __/ _ \| '__/ _` |/ _ \
+ | | \ \  __/\__ \  __/ (_| | | | (__| | | || | | (_) | | | (_| |  __/
+ |_|  \_\___||___/\___|\__,_|_|  \___|_| |_||_|  \___/|_|  \__, |\___|
+                                                            __/ |     
+                                                           |___/      
+""", id="logo-ascii")
+        yield Label("TERMINAL_INTELLIGENCE_SYSTEM // V0.1.0-ALPHA", id="tagline")
 
 class DashboardScreen(Screen):
     """The main view showing system health and active work."""
@@ -84,6 +92,7 @@ class DashboardScreen(Screen):
             # Update KPI Values
             self.ws_kpi.query_one(".kpi-value").update(str(len(workspaces)))
             self.jobs_kpi.query_one(".kpi-value").update(str(jobs.get("total_active", 0)))
+            self.reports_kpi.query_one(".kpi-value").update(str(jobs.get("total_reports", 0)))
             
             # Update Active Runs Table
             table = self.query_one("#active-runs-table", DataTable)
@@ -110,9 +119,20 @@ class SimulationMonitorScreen(Screen):
         yield Header(show_clock=True)
         with Container(classes="monitor-container"):
             yield Label(f"MONITORING RUN: {self.run_id}", id="monitor-title")
-            self.log_panel = Log(classes="log-panel", id="simulation-log")
-            yield self.log_panel
+            self.progress = ProgressBar(total=100, show_percentage=True, id="monitor-progress")
+            yield self.progress
+            with Horizontal(id="monitor-body"):
+                self.log_panel = Log(classes="log-panel", id="simulation-log")
+                yield self.log_panel
+                with Vertical(id="monitor-sidebar"):
+                    yield Label("SCENARIOS", classes="sidebar-title")
+                    self.scenarios_list = Static("Waiting for scenarios...", id="scenarios-preview")
+                    yield self.scenarios_list
         yield Footer()
+
+    BINDINGS = [
+        Binding("escape", "app.pop_screen", "Back to Dashboard"),
+    ]
 
     async def on_mount(self) -> None:
         self.start_monitoring()
@@ -127,7 +147,23 @@ class SimulationMonitorScreen(Screen):
             else:
                 timestamp = event.get("timestamp", 0)
                 msg = event.get("message", event.get("type", "Event"))
-                self.log_panel.write_line(f"[{msg}] {event.get('data', '')}")
+                data = event.get("data", "")
+                
+                # Colorize based on event type
+                if event.get("type") == "agent_debate_started":
+                    self.log_panel.write_line(f"[bold cyan]{msg}[/bold cyan] {data}")
+                elif event.get("type") == "tool_called":
+                    self.log_panel.write_line(f"[yellow]🔧 {msg}[/yellow] {data}")
+                else:
+                    self.log_panel.write_line(f"[{msg}] {data}")
+
+                if "round" in event:
+                    self.progress.advance(10)
+                
+                # Update scenarios list if found
+                if event.get("type") == "agent_debate_finished":
+                    scenarios_count = event.get("scenariosCount", 0)
+                    self.scenarios_list.update(f"✨ Found {scenarios_count} scenarios.\n\nVisit the Web UI or\nExport MD to view details.")
 
 class ProjectExplorerScreen(Screen):
     """Browse workspaces and projects in a tree view."""
