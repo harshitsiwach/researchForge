@@ -78,37 +78,51 @@ class AutoResearcher:
 You have a working draft:
 {self.working_draft[:1000] if self.working_draft else '(Empty)'}
 
-You need to gather more information. Select ONE tool to use right now to find the most critical missing information.
+You need to gather more factual information to deepen your research. Select ANY relevant tools to use right now to gather diverse data for a more accurate report.
 Available tools:
 {tools_desc}
 
 Respond in JSON only:
 {{
   "thought_process": "Why you need this data",
-  "tool_id": "web_search",
-  "query": "exact search term or url"
+  "tool_calls": [
+    {{"tool_id": "web_search", "query": "exact search term"}},
+    {{"tool_id": "arxiv", "query": "academic papers term"}}
+  ]
 }}"""
-        resp = chat([{"role": "user", "content": prompt}], temperature=0.3)
-        decision = safe_parse_json(resp, fallback={"tool_id": None, "query": ""})
+        resp = chat([{"role": "user", "content": prompt}], temperature=0.4)
+        decision = safe_parse_json(resp, fallback={"tool_calls": []})
         
-        tool_id = decision.get("tool_id")
-        query = decision.get("query")
+        tool_calls = decision.get("tool_calls", [])
         
-        if not tool_id or not query:
-            self.log("No tool selected. Proceeding with existing knowledge.")
+        if not tool_calls or not isinstance(tool_calls, list):
+            self.log("No tools selected. Proceeding with existing knowledge.")
             return "No new data gathered."
 
-        self.log(f"Executing tool '{tool_id}' with query: '{query}'")
-        self.emit("tool_called", {"toolId": tool_id, "query": query})
-        
-        try:
-            result = execute_tool(tool_id, query)
-            preview = str(result)[:200] + "..." if len(str(result)) > 200 else str(result)
-            self.emit("tool_result", {"toolId": tool_id, "query": query, "resultPreview": preview})
-            return f"Tool {tool_id} returned:\n{result}"
-        except Exception as e:
-            self.log(f"Tool {tool_id} failed: {e}")
-            return f"Error using tool {tool_id}: {e}"
+        findings = []
+        for call in tool_calls[:5]:  # Safety limit of 5 tool calls per loop
+            tool_id = call.get("tool_id")
+            query = call.get("query")
+            
+            if not tool_id or not query:
+                continue
+
+            self.log(f"Executing tool '{tool_id}' with query: '{query}'")
+            self.emit("tool_called", {"toolId": tool_id, "query": query})
+            
+            try:
+                result = execute_tool(tool_id, query)
+                preview = str(result)[:200] + "..." if len(str(result)) > 200 else str(result)
+                self.emit("tool_result", {"toolId": tool_id, "query": query, "resultPreview": preview})
+                findings.append(f"--- Tool: {tool_id} | Query: {query} ---\n{result}")
+            except Exception as e:
+                self.log(f"Tool {tool_id} failed: {e}")
+                findings.append(f"--- Tool: {tool_id} | Query: {query} ---\nError: {e}")
+                
+        if not findings:
+            return "No new data gathered."
+            
+        return "\n\n".join(findings)
 
     def _synthesize_draft(self, topic: str, findings: str) -> str:
         prompt = f"""You are drafting a comprehensive research report on: {topic}
