@@ -123,6 +123,10 @@ class LiveFeedManager:
                     self._fetch_rss(source.get("url", ""))
                 elif source_type == "api_poll":
                     self._fetch_api_poll(source)
+                elif source_type == "twitter":
+                    self._fetch_twitter(query)
+                elif source_type == "reddit":
+                    self._fetch_reddit(query)
                 # Note: 'websocket' type is handled via persistent threads started in start()
             except Exception as e:
                 print(f"[LiveFeed] Error fetching {source}: {e}")
@@ -226,6 +230,82 @@ class LiveFeedManager:
             ))
         except Exception as e:
             print(f"[LiveFeed] API Poll failed: {e}")
+
+    def _fetch_twitter(self, query: str):
+        """Fetch latest tweets via bird CLI (Agent-Reach)."""
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["bird", "search", query, "--count", "5"],
+                capture_output=True, text=True, timeout=15,
+            )
+            if result.returncode != 0:
+                return
+
+            # Parse lines as individual tweets
+            content = result.stdout.strip()
+            if not content:
+                return
+
+            # Use content hash to deduplicate
+            import hashlib
+            for chunk in content.split("\n\n"):
+                chunk = chunk.strip()
+                if not chunk:
+                    continue
+                chunk_hash = hashlib.md5(chunk.encode()).hexdigest()[:16]
+                if chunk_hash in self._seen_titles:
+                    continue
+                self._seen_titles.add(chunk_hash)
+
+                # Extract title from first line
+                first_line = chunk.split("\n")[0][:100]
+                self._queue.put(FeedItem(
+                    source_type="twitter",
+                    title=f"Tweet: {first_line}",
+                    content=chunk[:500],
+                    url="",
+                ))
+        except FileNotFoundError:
+            print("[LiveFeed] bird CLI not installed — skipping Twitter feed")
+        except Exception as e:
+            print(f"[LiveFeed] Twitter fetch failed: {e}")
+
+    def _fetch_reddit(self, query: str):
+        """Fetch latest Reddit posts via public JSON API (Agent-Reach)."""
+        try:
+            import requests
+            url = "https://www.reddit.com/search.json"
+            params = {"q": query, "sort": "new", "limit": 5, "t": "day"}
+            headers = {"User-Agent": "ResearchForge/1.0 (AI Research Agent)"}
+
+            resp = requests.get(url, params=params, headers=headers, timeout=10)
+            if resp.status_code != 200:
+                return
+
+            data = resp.json()
+            posts = data.get("data", {}).get("children", [])
+
+            for p in posts:
+                pd = p.get("data", {})
+                title = pd.get("title", "")
+                if not title or title in self._seen_titles:
+                    continue
+                self._seen_titles.add(title)
+
+                subreddit = pd.get("subreddit_name_prefixed", "r/unknown")
+                selftext = pd.get("selftext", "")[:300]
+                score = pd.get("score", 0)
+                permalink = pd.get("permalink", "")
+
+                self._queue.put(FeedItem(
+                    source_type="reddit",
+                    title=f"[{subreddit}] {title}",
+                    content=f"Score: {score}\n{selftext}",
+                    url=f"https://reddit.com{permalink}" if permalink else "",
+                ))
+        except Exception as e:
+            print(f"[LiveFeed] Reddit fetch failed: {e}")
 
     def _start_websocket_listener(self, source: dict):
         url = source.get("url", "")

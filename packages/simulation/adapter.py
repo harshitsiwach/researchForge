@@ -5,7 +5,8 @@ Pipeline:
   1. Ingest seeds → extract entities, claims, themes
   2. Generate agent personas from seed entities
   3. Run multi-round scenario exploration (structured debate)
-     - Between rounds: tool-calling + live data injection
+     - Between rounds: multi-source tool-calling + fact-verification
+     - Agent-Reach integration: Twitter, Reddit, YouTube, GitHub, Web
   4. Synthesize final scenario bundle as a report
 """
 
@@ -84,43 +85,127 @@ Respond as a JSON array of persona objects. No extra text outside the JSON."""
 
     # ── Step 2.5: Tool-calling between rounds ─────────
 
-    def request_tool_call(self, question: str, round_num: int, context_summary: str, available_tools: list[dict]) -> dict | None:
-        """Ask the LLM what tool to call to gather more info for the next round."""
+    def request_tool_calls(self, question: str, round_num: int, context_summary: str, available_tools: list[dict]) -> list[dict]:
+        """Ask the LLM what tools to call for multi-source verification.
+        
+        Returns a LIST of tool calls (not just one) so the agent can
+        cross-verify information across Twitter, Reddit, web, etc.
+        """
         if not available_tools:
-            return None
+            return []
 
-        tools_desc = "\n".join([
-            f"- {t['id']}: {t['description']}"
-            for t in available_tools
-        ])
+        # Categorize tools for the LLM to understand
+        tools_by_category = {}
+        for t in available_tools:
+            cat = t.get('category', 'other')
+            if cat not in tools_by_category:
+                tools_by_category[cat] = []
+            tools_by_category[cat].append(t)
+
+        tools_desc = ""
+        for cat, tools in tools_by_category.items():
+            tools_desc += f"\n[{cat.upper()}]\n"
+            for t in tools:
+                tools_desc += f"  - {t['id']}: {t['description']}\n"
 
         prompt = f"""You are a research coordinator preparing for round {round_num} of a debate.
 
 Research Question: {question}
 
-Current discussion summary: {context_summary[:1000]}
+Current discussion summary: {context_summary[:1500]}
 
-Available tools:
+Available research tools (organized by category):
 {tools_desc}
 
-Should you use a tool to gather more information? If yes, pick ONE tool and provide a search query.
-If you have enough information, respond with {{"skip": true}}.
+Your job: SELECT 1-3 tools to gather fresh, diverse data. Prioritize:
+1. At least ONE social source (twitter_search, reddit_search) for public opinion
+2. At least ONE factual source (web_search, web_reader, github_search) for verification
+3. Use youtube_search or arxiv if the topic involves tutorials, demos, or academic research
+
+If you truly have enough information already, respond with {{"skip": true}}.
 
 Respond in JSON only:
 {{
   "skip": false,
-  "tool_id": "web_search",
-  "query": "your search query here"
+  "tool_calls": [
+    {{"tool_id": "twitter_search", "query": "specific search", "reason": "why this source"}},
+    {{"tool_id": "web_search", "query": "specific search", "reason": "why this source"}}
+  ]
 }}"""
         resp = chat([
-            {"role": "system", "content": "You are a research coordinator deciding what data to gather. Respond with valid JSON only."},
+            {"role": "system", "content": "You are a multi-source research coordinator. Always gather from diverse sources for cross-verification. Respond with valid JSON only."},
             {"role": "user", "content": prompt}
-        ], temperature=0.3, max_tokens=200)
+        ], temperature=0.3, max_tokens=400)
 
         result = safe_parse_json(resp, fallback={"skip": True})
         if result.get("skip", False):
-            return None
-        return result
+            return []
+        return result.get("tool_calls", [])
+
+    def verify_claims(self, claims: list[str], tool_caller, log=None, emit=None) -> str:
+        """Cross-verify claims from a debate round using multiple Agent-Reach tools.
+        
+        Takes key claims from the debate and checks them against real-world
+        sources (Twitter sentiment, Reddit discussions, web facts).
+        Returns a verification summary to inject into the next round.
+        """
+        if not claims or not tool_caller:
+            return ""
+
+        # Ask LLM which claims need verification and what tools to use
+        prompt = f"""These claims were made during a research debate. Identify the top 2 claims
+that most need fact-checking and suggest the best tool + query to verify each.
+
+Claims:
+{json.dumps(claims[:8])}
+
+Available tools:
+{json.dumps([{'id': t['id'], 'desc': t['description'][:80]} for t in tool_caller['tools_info']])}
+
+Respond in JSON:
+{{
+  "verifications": [
+    {{"claim": "the claim", "tool_id": "best_tool", "query": "verification query"}}
+  ]
+}}"""
+        resp = chat([
+            {"role": "system", "content": "You are a fact-checker. Pick tools wisely for verification. JSON only."},
+            {"role": "user", "content": prompt}
+        ], temperature=0.2, max_tokens=300)
+
+        plan = safe_parse_json(resp, fallback={"verifications": []})
+        verifications = plan.get("verifications", [])
+
+        if not verifications:
+            return ""
+
+        results = []
+        for v in verifications[:2]:  # Max 2 verification checks per round
+            tool_id = v.get("tool_id")
+            query = v.get("query")
+            claim = v.get("claim", "")
+            if not tool_id or not query:
+                continue
+
+            if log:
+                log(f"    🔍 Verifying: \"{claim[:60]}...\" via {tool_id}")
+            if emit:
+                emit("claim_verification", {
+                    "claim": claim[:100],
+                    "toolId": tool_id,
+                    "query": query,
+                })
+
+            tool_result = tool_caller["execute"](tool_id, query)
+            results.append(
+                f"[VERIFICATION — {tool_id}]\n"
+                f"Claim: {claim}\n"
+                f"Evidence: {tool_result[:600]}"
+            )
+            if log:
+                log(f"    ✓ Verification returned {len(tool_result)} chars")
+
+        return "\n\n".join(results)
 
     # ── Step 3: Run scenario exploration (with tools) ─
 
@@ -153,25 +238,31 @@ Respond in JSON only:
             live_items_added = False
             round_intel = []
 
-            # --- Tool-calling between rounds ---
+            # --- Multi-source tool-calling between rounds (Agent-Reach) ---
             if tool_caller and round_num > 1:
-                context_so_far = json.dumps(all_rounds[-1:], indent=1)[:500] if all_rounds else "No prior rounds"
-                tool_request = self.request_tool_call(question, round_num, context_so_far, tool_caller["tools_info"])
-                if tool_request and tool_request.get("tool_id") and tool_request.get("query"):
+                context_so_far = json.dumps(all_rounds[-1:], indent=1)[:800] if all_rounds else "No prior rounds"
+                
+                # 1. Gather fresh intelligence from multiple sources
+                tool_requests = self.request_tool_calls(question, round_num, context_so_far, tool_caller["tools_info"])
+                for tool_request in tool_requests:
+                    tool_id = tool_request.get("tool_id")
+                    tool_query = tool_request.get("query")
+                    reason = tool_request.get("reason", "")
+                    if not tool_id or not tool_query:
+                        continue
+
                     tools_used = True
-                    tool_id = tool_request["tool_id"]
-                    tool_query = tool_request["query"]
                     if log:
-                        log(f"    🔧 Calling tool: {tool_id} → \"{tool_query}\"")
+                        log(f"    🔧 [{tool_id}] → \"{tool_query}\" ({reason})")
                     if emit:
                         emit("tool_called", {
                             "toolId": tool_id,
                             "query": tool_query,
+                            "reason": reason,
                             "round": round_num,
                         })
-                    # Execute the tool
                     tool_result = tool_caller["execute"](tool_id, tool_query)
-                    round_intel.append(f"[Tool: {tool_id}] {tool_result[:800]}")
+                    round_intel.append(f"[{tool_id.upper()}] {tool_result[:800]}")
                     if log:
                         log(f"    ✓ Got {len(tool_result)} chars from {tool_id}")
                     if emit:
@@ -181,6 +272,13 @@ Respond in JSON only:
                             "resultPreview": tool_result[:200],
                             "round": round_num,
                         })
+
+                # 2. Verify claims from the previous round
+                if all_rounds:
+                    prev_claims = all_rounds[-1].get("key_points", [])
+                    verification = self.verify_claims(prev_claims, tool_caller, log, emit)
+                    if verification:
+                        round_intel.append(f"\n--- FACT-CHECK RESULTS ---\n{verification}")
 
             # --- Live feed injection ---
             if live_feed:
@@ -213,7 +311,8 @@ Respond in JSON only:
 FRESH INTELLIGENCE FOR THIS ROUND:
 {chr(10).join(round_intel)}
 
-Incorporate this fresh intelligence directly into the current debate."""
+Incorporate this fresh intelligence directly into the current debate.
+IMPORTANT: If any fact-check results contradict earlier claims, agents MUST address this."""
 
             prompt = f"""You are orchestrating round {round_num} of a {self.config.debate_style} discussion with {self.config.num_agents} agents.
 

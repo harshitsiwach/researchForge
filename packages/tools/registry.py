@@ -27,6 +27,7 @@ class ToolDef:
 # ── Registry ────────────────────────────────────────────
 
 BUILTIN_MODULES = [
+    # ── Original tools ──
     "packages.tools.builtins.web_search",
     "packages.tools.builtins.url_scraper",
     "packages.tools.builtins.wikipedia_tool",
@@ -35,6 +36,20 @@ BUILTIN_MODULES = [
     "packages.tools.builtins.calculator",
     "packages.tools.builtins.api_fetch",
     "packages.tools.builtins.websocket_read",
+    # ── Agent-Reach tools (social + enhanced fetch) ──
+    "packages.tools.builtins.twitter_tool",
+    "packages.tools.builtins.youtube_tool",
+    "packages.tools.builtins.github_tool",
+    "packages.tools.builtins.reddit_tool",
+    "packages.tools.builtins.web_reader",
+    "packages.tools.builtins.rss_tool",
+]
+
+# Tool IDs that should be auto-enabled for every new project/run
+AGENT_REACH_DEFAULTS = [
+    "web_search", "web_reader", "news_search", "twitter_search",
+    "youtube_search", "github_search", "reddit_search", "rss_reader",
+    "arxiv", "wikipedia", "url_scraper",
 ]
 
 _REGISTRY: dict[str, ToolDef] = {}
@@ -98,8 +113,26 @@ def set_enabled_tool_ids(ids: list[str]):
     conn.close()
 
 
+def ensure_defaults_enabled():
+    """Auto-enable Agent-Reach default tools if nothing is enabled yet.
+
+    Called on first run to ensure the agent always has access to
+    internet research tools without manual configuration.
+    """
+    current = get_enabled_tool_ids()
+    if current:
+        return  # User has already configured tools — don't override
+
+    _load_registry()
+    # Enable all defaults that are actually registered
+    to_enable = [tid for tid in AGENT_REACH_DEFAULTS if tid in _REGISTRY]
+    if to_enable:
+        set_enabled_tool_ids(to_enable)
+
+
 def get_enabled_tools() -> list[ToolDef]:
     _load_registry()
+    ensure_defaults_enabled()
     enabled = get_enabled_tool_ids()
     return [t for t in _REGISTRY.values() if t.id in enabled]
 

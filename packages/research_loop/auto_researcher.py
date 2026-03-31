@@ -72,22 +72,45 @@ class AutoResearcher:
         return self.working_draft
 
     def _gather_data(self, topic: str) -> str:
-        """Use tools to gather info on the topic."""
-        tools_desc = "\n".join([f"- {t.id}: {t.description}" for t in self.tools])
+        """Use Agent-Reach tools to gather info from multiple internet sources."""
+        # Categorize tools for smarter selection
+        social_tools = [t for t in self.tools if t.category == "social"]
+        search_tools = [t for t in self.tools if t.category == "search"]
+        fetch_tools = [t for t in self.tools if t.category == "fetch"]
+        academic_tools = [t for t in self.tools if t.category == "academic"]
+
+        all_tools = self.tools
+        tools_desc = ""
+        for category, tools in [("SOCIAL MEDIA", social_tools), ("SEARCH", search_tools), 
+                                 ("FETCH/READ", fetch_tools), ("ACADEMIC", academic_tools)]:
+            if tools:
+                tools_desc += f"\n[{category}]\n"
+                for t in tools:
+                    tools_desc += f"  - {t.id}: {t.description}\n"
+
         prompt = f"""You are the Master Research Agent. Your current topic is: {topic}
 You have a working draft:
 {self.working_draft[:1000] if self.working_draft else '(Empty)'}
 
-You need to gather more factual information to deepen your research. Select ANY relevant tools to use right now to gather diverse data for a more accurate report.
+You need to gather comprehensive, multi-source data for your research.
+IMPORTANT: Use tools from DIFFERENT categories to cross-verify information.
+For example:
+  - twitter_search + web_search = social sentiment + factual data
+  - reddit_search + arxiv = community discussion + academic research
+  - youtube_search + web_reader = tutorial content + documentation
+
 Available tools:
 {tools_desc}
 
+Select 2-4 diverse tools across categories. Be strategic about search queries.
+
 Respond in JSON only:
 {{
-  "thought_process": "Why you need this data",
+  "thought_process": "Why you need this data and your verification strategy",
   "tool_calls": [
-    {{"tool_id": "web_search", "query": "exact search term"}},
-    {{"tool_id": "arxiv", "query": "academic papers term"}}
+    {{"tool_id": "twitter_search", "query": "exact search term"}},
+    {{"tool_id": "web_search", "query": "verification search term"}},
+    {{"tool_id": "reddit_search", "query": "community perspective term"}}
   ]
 }}"""
         resp = chat([{"role": "user", "content": prompt}], temperature=0.4)
