@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { listRuns, compareRuns, promoteConfig } from '../api'
+import { toast } from '../components/Toast'
+import PageLoading from '../components/PageLoading'
 
 function ScoreBar({ label, value, delta }) {
   return (
@@ -31,26 +33,35 @@ export default function Compare() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [promoting, setPromoting] = useState(false)
+  const [loadingRuns, setLoadingRuns] = useState(true)
 
   useEffect(() => {
-    listRuns(projId).then(data => {
-      const completed = data.filter(r => r.status === 'completed')
-      setRuns(completed)
-      if (completed.length >= 2) {
-        setBaselineId(completed[1]?.id || '')
-        setChallengerId(completed[0]?.id || '')
-      }
-    })
+    listRuns(projId)
+      .then(data => {
+        const completed = data.filter(r => r.status === 'completed')
+        setRuns(completed)
+        if (completed.length >= 2) {
+          setBaselineId(completed[1]?.id || '')
+          setChallengerId(completed[0]?.id || '')
+        }
+      })
+      .catch(e => {
+        console.error(e)
+        toast.error('Failed to load runs')
+      })
+      .finally(() => setLoadingRuns(false))
   }, [projId])
 
   async function handleCompare() {
-    if (!baselineId || !challengerId) return
+    if (!baselineId || !challengerId) return toast.warning('Select both baseline and challenger runs')
+    if (baselineId === challengerId) return toast.warning('Baseline and challenger must be different runs')
     setLoading(true)
     try {
       const res = await compareRuns(projId, baselineId, challengerId)
       setResult(res)
+      toast.success('Comparison complete')
     } catch (e) {
-      alert('Compare failed: ' + e.message)
+      toast.error('Compare failed: ' + e.message)
     }
     setLoading(false)
   }
@@ -59,15 +70,38 @@ export default function Compare() {
     setPromoting(true)
     try {
       await promoteConfig(projId, runId)
-      alert('Config promoted to new baseline!')
+      toast.success('Config promoted to new baseline!')
     } catch (e) {
-      alert('Promote failed: ' + e.message)
+      toast.error('Promote failed: ' + e.message)
     }
     setPromoting(false)
   }
 
+  if (loadingRuns) return <PageLoading message="LOADING RUN DATA..." />
+
+  if (runs.length < 2) {
+    return (
+      <div className="animate-in">
+        <div className="page-header">
+          <button className="btn btn-ghost btn-sm mb-2"
+            onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}>← Back to Project</button>
+          <h1 className="page-title">Compare Runs</h1>
+          <p className="page-subtitle">Select a baseline and a challenger run to compare research quality</p>
+        </div>
+        <div className="empty-state animate-in">
+          <div className="empty-icon">⚖️</div>
+          <h2 className="empty-title" style={{ fontSize: '24px', color: '#fff' }}>Not Enough Data to Compare</h2>
+          <p className="empty-text">You need at least 2 completed runs to perform a comparison. Launch more simulation runs and come back once they finish.</p>
+          <button className="btn btn-primary" onClick={() => navigate(`/workspace/${wsId}/project/${projId}/run/new`)} style={{ marginTop: '24px' }}>
+            Launch New Run
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div>
+    <div className="animate-in">
       <div className="page-header">
         <button className="btn btn-ghost btn-sm mb-2"
           onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}>← Back to Project</button>

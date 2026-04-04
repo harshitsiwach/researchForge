@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getProject, uploadSeed, listSeeds, generateSeed, listRuns, getFeedTypes, getProjectFeeds, configureProjectFeeds, testFeedSource, listAutoResearchJobs, createAutoResearch } from '../api'
+import { toast } from '../components/Toast'
 
 export default function Project() {
   const { wsId, projId } = useParams()
@@ -19,7 +20,7 @@ export default function Project() {
   const [newFeed, setNewFeed] = useState({ type: 'news', label: 'News Headline Monitor', icon: '📰', query: '', url: '', name: '' })
   const [testingFeed, setTestingFeed] = useState(false)
 
-  useEffect(() => { load() }, [projId])
+  useEffect(() => { load() }, [projId, wsId])
 
   async function load() {
     try {
@@ -37,6 +38,7 @@ export default function Project() {
       setFeeds(f)
     } catch (e) {
       console.error(e)
+      toast.error('Failed to load project')
     }
   }
 
@@ -48,8 +50,9 @@ export default function Project() {
       await uploadSeed(projId, file)
       const s = await listSeeds(projId)
       setSeeds(s)
+      toast.success('Seed uploaded successfully')
     } catch (e) {
-      console.error(e)
+      toast.error(e.message || 'Failed to upload seed')
     }
     setUploading(false)
     fileRef.current.value = ''
@@ -57,7 +60,7 @@ export default function Project() {
 
   async function handleGenerate() {
     if (!project?.question) {
-      alert("Please set a research question first.")
+      toast.warning('Please set a research question first')
       return
     }
     setGenerating(true)
@@ -65,22 +68,22 @@ export default function Project() {
       await generateSeed(projId)
       const s = await listSeeds(projId)
       setSeeds(s)
+      toast.success('Seed generated successfully')
     } catch (e) {
-      console.error(e)
-      alert(e.message || "Failed to generate seed")
+      toast.error(e.message || 'Failed to generate seed')
     }
     setGenerating(false)
   }
 
   async function handleAddFeed() {
-    if (!newFeed.name) return alert("Please name this feed source")
+    if (!newFeed.name) return toast.warning('Please name this feed source')
     
     if (['rss', 'websocket', 'api_poll'].includes(newFeed.type) && !newFeed.url) {
-      return alert("This feed type requires a URL")
+      return toast.warning('This feed type requires a URL')
     }
     
     if ((newFeed.type === 'news' || newFeed.type === 'web') && !newFeed.query) {
-      return alert("This feed type requires a search query")
+      return toast.warning('This feed type requires a search query')
     }
     
     const newSource = {
@@ -96,8 +99,9 @@ export default function Project() {
       setFeeds(updated)
       setShowAddFeed(false)
       setNewFeed({ ...newFeed, query: '', url: '', name: '' })
+      toast.success('Feed source added')
     } catch (e) {
-      alert("Failed to save feed")
+      toast.error('Failed to save feed')
     }
   }
 
@@ -106,8 +110,9 @@ export default function Project() {
     try {
       await configureProjectFeeds(projId, updated)
       setFeeds(updated)
+      toast.info('Feed source removed')
     } catch (e) {
-      alert("Failed to remove feed")
+      toast.error('Failed to remove feed')
     }
   }
 
@@ -116,12 +121,12 @@ export default function Project() {
     try {
       const res = await testFeedSource(source)
       if (res.success) {
-        alert(`Test successful! Found ${res.count} items. Sample: ${res.sample?.title}`)
+        toast.success(`Test successful! Found ${res.count} items`)
       } else {
-        alert(`Test failed: ${res.error}`)
+        toast.error(`Test failed: ${res.error}`)
       }
     } catch (e) {
-      alert("Test request failed")
+      toast.error('Test request failed')
     }
     setTestingFeed(false)
   }
@@ -183,12 +188,11 @@ export default function Project() {
         </div>
         
         {showAddFeed && (
-          <div className="p-4 mb-4 border-b border-white/10" style={{ background: 'rgba(0,0,0,0.2)' }}>
-            <div className="grid grid-cols-2 gap-4 mb-4" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px' }}>
+          <div style={{ padding: '16px', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Source Type</label>
-                <select className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
-                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', color: 'var(--text-muted)' }}>Source Type</label>
+                <select style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
                   value={newFeed.type}
                   onChange={e => {
                     const t = feedTypes.find(ft => ft.type === e.target.value)
@@ -198,31 +202,28 @@ export default function Project() {
                 </select>
               </div>
               <div>
-                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Display Name</label>
-                <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
-                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', color: 'var(--text-muted)' }}>Display Name</label>
+                <input type="text" style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
                   placeholder="e.g. AI News Feed"
                   value={newFeed.name} onChange={e => setNewFeed({...newFeed, name: e.target.value})} />
               </div>
             </div>
             
             {(newFeed.type === 'news' || newFeed.type === 'web') && (
-              <div className="mb-4" style={{ marginBottom: '16px' }}>
-                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>Search Query</label>
-                <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
-                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', color: 'var(--text-muted)' }}>Search Query</label>
+                <input type="text" style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
                   placeholder="Enter keyword to monitor..."
                   value={newFeed.query} onChange={e => setNewFeed({...newFeed, query: e.target.value})} />
               </div>
             )}
             
             {['rss', 'websocket', 'api_poll'].includes(newFeed.type) && (
-              <div className="mb-4" style={{ marginBottom: '16px' }}>
-                <label className="text-sm text-muted mb-1 block" style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px', color: 'var(--text-muted)' }}>
                   {newFeed.type === 'websocket' ? 'WebSocket WSS URL' : newFeed.type === 'api_poll' ? 'API Endpoint URL' : 'RSS/Atom URL'}
                 </label>
-                <input type="text" className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm"
-                  style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
+                <input type="text" style={{ width: '100%', padding: '8px 12px', background: 'var(--surface-sunken)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)' }}
                   placeholder={newFeed.type === 'websocket' ? 'wss://...' : 'https://...'}
                   value={newFeed.url} onChange={e => setNewFeed({...newFeed, url: e.target.value})} />
               </div>
@@ -246,14 +247,14 @@ export default function Project() {
                   style={{ padding: '12px', borderRadius: 'var(--radius-sm)',
                     background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)' }}>
                   <div>
-                    <div className="font-semibold text-sm flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: 600 }}>
                       <span>{fType?.icon || '📡'}</span> {f.name}
                     </div>
-                    <div className="text-xs text-muted mt-1" style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                       {['rss', 'websocket', 'api_poll'].includes(f.type) ? f.url : `Query: "${f.query}"`}
                     </div>
                   </div>
-                  <div className="flex gap-2" style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleTestFeed(f)} disabled={testingFeed}>
                       Test
                     </button>
@@ -274,9 +275,11 @@ export default function Project() {
         
         {/* Launch Simulation Card */}
         <div 
-          className="card hover-glow flex flex-col items-center justify-center text-center transition-all bg-gradient-to-b from-transparent to-slate-900/50" 
+          className="card" 
           style={{ cursor: 'pointer', padding: '40px 24px', border: '1px solid rgba(255,255,255,0.1)' }}
           onClick={() => navigate(`/workspace/${wsId}/project/${projId}/run/new`)}
+          role="button" tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && navigate(`/workspace/${wsId}/project/${projId}/run/new`)}
         >
           <div style={{ fontSize: '48px', marginBottom: '16px', filter: 'drop-shadow(0 0 20px rgba(99,102,241,0.4))' }}>🚀</div>
           <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Simulation Lobby</h3>
@@ -287,7 +290,7 @@ export default function Project() {
 
         {/* Launch Auto-Researcher Card */}
         <div 
-          className="card flex flex-col items-center justify-center text-center transition-all" 
+          className="card" 
           style={{ cursor: 'pointer', padding: '40px 24px', border: '1px solid var(--text-neon)', background: 'rgba(0, 255, 163, 0.05)', boxShadow: '0 0 30px rgba(0, 255, 163, 0.05)' }}
           onClick={async () => {
             const topic = window.prompt("Enter a topic for the Auto-Researcher to investigate:")
@@ -295,9 +298,11 @@ export default function Project() {
               try {
                 const res = await createAutoResearch(projId, topic)
                 navigate(`/auto_research/${res.job_id}`)
-              } catch(e) { alert("Failed to start Auto-Researcher") }
+              } catch(e) { toast.error("Failed to start Auto-Researcher") }
             }
           }}
+          role="button" tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && e.currentTarget.click()}
           onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 0 50px rgba(0, 255, 163, 0.15)' }}
           onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 255, 163, 0.05)' }}
         >
@@ -329,11 +334,11 @@ export default function Project() {
             <table>
               <thead>
                 <tr>
-                  <th>Job ID</th>
-                  <th>Topic</th>
-                  <th>Status</th>
-                  <th>Started</th>
-                  <th>Actions</th>
+                  <th scope="col">Job ID</th>
+                  <th scope="col">Topic</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Started</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -376,11 +381,11 @@ export default function Project() {
             <table>
               <thead>
                 <tr>
-                  <th>Run ID</th>
-                  <th>Mode</th>
-                  <th>Status</th>
-                  <th>Started</th>
-                  <th>Actions</th>
+                  <th scope="col">Run ID</th>
+                  <th scope="col">Mode</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Started</th>
+                  <th scope="col">Actions</th>
                 </tr>
               </thead>
               <tbody>

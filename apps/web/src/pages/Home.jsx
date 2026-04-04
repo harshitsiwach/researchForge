@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listWorkspaces, createWorkspace, createProject } from '../api'
+import { listWorkspaces, createWorkspace, createProject, listRuns } from '../api'
+import { toast } from '../components/Toast'
 
 export default function Home() {
   const [workspaces, setWorkspaces] = useState([])
@@ -10,16 +11,51 @@ export default function Home() {
   const [projName, setProjName] = useState('')
   const [projQuestion, setProjQuestion] = useState('')
   const [loading, setLoading] = useState(true)
+  const [recentRuns, setRecentRuns] = useState([])
+  const [promotedConfig, setPromotedConfig] = useState(null)
+  const modalRef = useRef(null)
+  const projectModalRef = useRef(null)
   const navigate = useNavigate()
 
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    function handleEscape(e) {
+      if (e.key === 'Escape') {
+        if (showProject) setShowProject(null)
+        else if (showNew) setShowNew(false)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [showNew, showProject])
 
   async function load() {
     try {
       const data = await listWorkspaces()
       setWorkspaces(data)
+      const allRuns = []
+      for (const ws of data) {
+        try {
+          const wsData = await fetch(`/api/workspaces/${ws.id}`).then(r => r.json())
+          if (wsData.projects) {
+            for (const proj of wsData.projects) {
+              if (proj.runs) {
+                proj.runs.forEach(r => allRuns.push({ ...r, workspaceName: ws.name, projectName: proj.name }))
+              }
+              if (proj.configs) {
+                const baseline = proj.configs.find(c => c.is_baseline)
+                if (baseline) setPromotedConfig({ ...baseline, projectName: proj.name, workspaceName: ws.name })
+              }
+            }
+          }
+        } catch {}
+      }
+      allRuns.sort((a, b) => (b.started_at || '').localeCompare(a.started_at || ''))
+      setRecentRuns(allRuns.slice(0, 3))
     } catch (e) {
       console.error(e)
+      toast.error('Failed to load workspaces')
     }
     setLoading(false)
   }
@@ -32,8 +68,9 @@ export default function Home() {
       setWsName('')
       setShowNew(false)
       load()
+      toast.success('Workspace created successfully')
     } catch (e) {
-      console.error(e)
+      toast.error(e.message || 'Failed to create workspace')
     }
   }
 
@@ -45,10 +82,15 @@ export default function Home() {
       setProjName('')
       setProjQuestion('')
       setShowProject(null)
+      toast.success('Project deployed successfully')
       navigate(`/workspace/${showProject}/project/${proj.id}`)
     } catch (e) {
-      console.error(e)
+      toast.error(e.message || 'Failed to create project')
     }
+  }
+
+  function openModal(ref) {
+    ref.current?.focus()
   }
 
   return (
@@ -61,7 +103,7 @@ export default function Home() {
           <h1 className="page-title">Laboratory Overview</h1>
           <p className="page-subtitle">Orchestrate simulations and analyze emergent agent behaviors across your workspaces.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowNew(true)}>
+        <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }}>
           <span style={{ fontSize: '18px' }}>+</span> New Research Unit
         </button>
       </div>
@@ -76,7 +118,7 @@ export default function Home() {
           <div className="empty-icon" style={{ opacity: 0.8, filter: 'drop-shadow(0 0 10px var(--accent-indigo))' }}>🧪</div>
           <h2 className="empty-title" style={{ fontSize: '24px', color: '#fff' }}>No Active Units Found</h2>
           <p className="empty-text">Initialize your first research workspace to begin generating scenarios and monitoring agent interactions.</p>
-          <button className="btn btn-primary btn-lg" onClick={() => setShowNew(true)} style={{ marginTop: '32px' }}>
+          <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }} style={{ marginTop: '32px' }}>
             Initialize Workspace
           </button>
         </div>
@@ -119,9 +161,51 @@ export default function Home() {
         </div>
       )}
 
+      {recentRuns.length > 0 && (
+        <div className="card mt-6 animate-in" style={{ animationDelay: '0.3s' }}>
+          <div className="card-header">
+            <div className="card-title">🕐 Recent Runs</div>
+          </div>
+          <div className="flex flex-col gap-2">
+            {recentRuns.map(run => (
+              <div key={run.id} className="flex items-center justify-between"
+                style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)', cursor: 'pointer' }}
+                onClick={() => navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}
+                role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}>
+                <div>
+                  <span className="font-mono text-sm">{run.id.slice(0, 16)}</span>
+                  <span className="text-sm text-muted" style={{ marginLeft: '12px' }}>{run.workspaceName} / {run.projectName}</span>
+                </div>
+                <span className={`badge badge-${run.status}`}>
+                  <span className="badge-dot" />
+                  {run.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {promotedConfig && (
+        <div className="card mt-4 animate-in" style={{ animationDelay: '0.4s', borderColor: 'var(--success)' }}>
+          <div className="card-header">
+            <div className="card-title" style={{ color: 'var(--success)' }}>🛡️ Promoted Baseline</div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="stat-box" style={{ minWidth: '120px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{promotedConfig.label}</div>
+              <div className="text-sm text-muted">{promotedConfig.projectName}</div>
+            </div>
+            <div className="text-sm text-muted">
+              Agents: {promotedConfig.config_json?.num_agents || '—'} · Rounds: {promotedConfig.config_json?.num_rounds || '—'} · Style: {promotedConfig.config_json?.debate_style || '—'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNew && (
         <div className="modal-overlay" onClick={() => setShowNew(false)}>
-          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateWs}>
+          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateWs} role="dialog" aria-modal="true" aria-label="Create Research Unit" ref={modalRef} tabIndex={-1}>
             <div style={{ marginBottom: '24px' }}>
               <div style={{ color: 'var(--text-neon)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}>CMD: INITIALIZE_UNIT</div>
               <h2 className="modal-title" style={{ marginBottom: 0 }}>Create Research Unit</h2>
@@ -143,7 +227,7 @@ export default function Home() {
 
       {showProject && (
         <div className="modal-overlay" onClick={() => setShowProject(null)}>
-          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateProject}>
+          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateProject} role="dialog" aria-modal="true" aria-label="New Subject Analysis" ref={projectModalRef} tabIndex={-1}>
             <div style={{ marginBottom: '24px' }}>
               <div style={{ color: 'var(--text-neon)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}>CMD: DEPLOY_PROJECT</div>
               <h2 className="modal-title" style={{ marginBottom: 0 }}>New Subject Analysis</h2>

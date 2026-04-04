@@ -2,30 +2,33 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getActiveJobs } from '../api'
 
+const POLL_INTERVAL = 5000
+
 export default function GlobalActiveTaskBar() {
   const [activeJobs, setActiveJobs] = useState({ runs: [], auto_research_jobs: [], total_active: 0 })
   const navigate = useNavigate()
   const location = useLocation()
 
   useEffect(() => {
+    let mounted = true
     const timer = setInterval(async () => {
       try {
         const data = await getActiveJobs()
-        setActiveJobs(data)
+        if (mounted) setActiveJobs(data)
       } catch (e) {
         console.error("Failed to fetch active jobs", e)
       }
-    }, 5000)
+    }, POLL_INTERVAL)
     
-    // Initial fetch
-    getActiveJobs().then(setActiveJobs).catch(() => {})
+    getActiveJobs()
+      .then(data => { if (mounted) setActiveJobs(data) })
+      .catch(() => {})
 
-    return () => clearInterval(timer)
+    return () => { mounted = false; clearInterval(timer) }
   }, [])
 
   if (activeJobs.total_active === 0) return null
 
-  // Pick the most recent/relevant job to show in the bar
   const mainJob = activeJobs.auto_research_jobs[0] || activeJobs.runs[0]
   if (!mainJob) return null
 
@@ -40,10 +43,13 @@ export default function GlobalActiveTaskBar() {
   }
 
   return (
-    <div className="global-active-bar animate-slide-up" onClick={handleLink}>
-      <div className="flex items-center gap-4 w-full max-w-7xl mx-auto px-6">
+    <div className="global-active-bar animate-slide-up" onClick={handleLink}
+      role="button" tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && handleLink()}
+      aria-label={`Active job: ${mainJob.topic || mainJob.id}. Click to view.`}>
+      <div className="flex items-center gap-4 w-full" style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px' }}>
         <div className="active-pulse"></div>
-        <div className="flex-1 min-w-0">
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, letterSpacing: '0.05em' }}>
             {mainJob.topic ? 'AUTO-RESEARCH ACTIVE' : 'SIMULATION RUNNING'}
           </div>

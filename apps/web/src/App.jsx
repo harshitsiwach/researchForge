@@ -15,12 +15,13 @@ function App() {
 
   return (
     <div className="app-layout">
-      <aside className="sidebar">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
+      <aside className="sidebar" role="navigation" aria-label="Main navigation">
         <div className="sidebar-logo">
           Research<span>Forge</span>
         </div>
         
-        <NavLink to="/" className={({ isActive }) => `nav-link ${isActive && location.pathname === '/' ? 'active' : ''}`}>
+        <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <span className="nav-icon">⬡</span> <span>Home</span>
         </NavLink>
         <NavLink to="/toolbox" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
@@ -32,7 +33,7 @@ function App() {
 
         <div style={{ flex: 1 }} />
         
-        <div style={{ padding: '0 12px' }}>
+        <div className="lab-status" style={{ padding: '0 12px' }}>
           <div style={{
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border)',
@@ -51,7 +52,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="main-content" style={{ paddingBottom: '100px' }}>
+      <main id="main-content" className="main-content" style={{ paddingBottom: '100px' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/workspace/:wsId/project/:projId" element={<Project />} />

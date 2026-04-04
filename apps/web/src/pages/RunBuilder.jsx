@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { createRun } from '../api'
+import { createRun, listSeeds } from '../api'
+import { toast } from '../components/Toast'
 
 const MODES = [
   { value: 'explore', label: '🔭 Explore', desc: 'Open-ended research, generate hypotheses and scenario branches' },
@@ -19,8 +20,21 @@ export default function RunBuilder() {
   const [critiqueStrength, setCritiqueStrength] = useState('medium')
   const [endlessMode, setEndlessMode] = useState(false)
   const [launching, setLaunching] = useState(false)
+  const [seeds, setSeeds] = useState([])
+  const [selectedSeeds, setSelectedSeeds] = useState([])
+  const [loadingSeeds, setLoadingSeeds] = useState(true)
+
+  useEffect(() => {
+    listSeeds(projId)
+      .then(s => { setSeeds(s); if (s.length > 0) setSelectedSeeds(s.map(s => s.id)) })
+      .catch(() => {})
+      .finally(() => setLoadingSeeds(false))
+  }, [projId])
 
   async function handleLaunch() {
+    if (numAgents < 2 || numAgents > 16) {
+      return toast.warning('Number of agents must be between 2 and 16')
+    }
     setLaunching(true)
     try {
       const result = await createRun(projId, {
@@ -30,12 +44,28 @@ export default function RunBuilder() {
         debate_style: debateStyle,
         critique_strength: critiqueStrength,
         endless_mode: endlessMode,
+        seed_ids: selectedSeeds,
       })
+      toast.success('Simulation launched successfully')
       navigate(`/run/${result.run_id}`)
     } catch (e) {
-      alert('Failed to launch: ' + e.message)
+      toast.error('Failed to launch: ' + e.message)
       setLaunching(false)
     }
+  }
+
+  function toggleSeed(id) {
+    setSelectedSeeds(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    )
+  }
+
+  function selectAllSeeds() {
+    setSelectedSeeds(seeds.map(s => s.id))
+  }
+
+  function clearAllSeeds() {
+    setSelectedSeeds([])
   }
 
   return (
@@ -53,18 +83,61 @@ export default function RunBuilder() {
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
           {MODES.map(m => (
             <div key={m.value}
-              className="card"
-              style={{
-                cursor: 'pointer',
-                borderColor: mode === m.value ? 'var(--accent)' : undefined,
-                boxShadow: mode === m.value ? 'var(--shadow-glow)' : undefined,
-              }}
-              onClick={() => setMode(m.value)}>
+              className={`card mode-card ${mode === m.value ? 'mode-card-selected' : ''}`}
+              onClick={() => setMode(m.value)}
+              role="button" tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && setMode(m.value)}
+              aria-pressed={mode === m.value}>
               <div className="card-title">{m.label}</div>
               <p className="text-sm text-muted mt-2">{m.desc}</p>
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Seed Selection */}
+      <div className="card mb-4">
+        <div className="card-header">
+          <div className="card-title">📄 Select Seeds</div>
+          <div className="flex gap-2">
+            <button className="btn btn-ghost btn-sm" onClick={selectAllSeeds} disabled={seeds.length === 0}>Select All</button>
+            <button className="btn btn-ghost btn-sm" onClick={clearAllSeeds} disabled={selectedSeeds.length === 0}>Clear</button>
+          </div>
+        </div>
+        {loadingSeeds ? (
+          <div className="flex items-center gap-3"><div className="spinner" /> <span className="text-sm text-muted">Loading seeds...</span></div>
+        ) : seeds.length === 0 ? (
+          <div className="empty-state" style={{ padding: '24px' }}>
+            <p className="empty-text">No seeds available. Upload seeds in the project page first.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {seeds.map(s => (
+              <div key={s.id}
+                className="flex items-center gap-3"
+                style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)',
+                  background: selectedSeeds.includes(s.id) ? 'rgba(99,102,241,0.1)' : 'rgba(15,23,42,0.5)',
+                  border: `1px solid ${selectedSeeds.includes(s.id) ? 'var(--accent-indigo)' : 'var(--border)'}`,
+                  cursor: 'pointer' }}
+                onClick={() => toggleSeed(s.id)}
+                role="checkbox" aria-checked={selectedSeeds.includes(s.id)} tabIndex={0}
+                onKeyDown={e => e.key === ' ' && (e.preventDefault(), toggleSeed(s.id))}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                  border: `2px solid ${selectedSeeds.includes(s.id) ? 'var(--accent-indigo)' : 'var(--border)'}`,
+                  background: selectedSeeds.includes(s.id) ? 'var(--accent-indigo)' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', fontSize: 12, transition: 'all 0.2s'
+                }}>
+                  {selectedSeeds.includes(s.id) && '✓'}
+                </div>
+                <span className="text-sm" style={{ flex: 1 }}>{s.filename}</span>
+                <span className="text-sm text-muted">{s.created_at?.slice(0, 10)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="text-sm text-muted mt-2">{selectedSeeds.length} of {seeds.length} seeds selected</div>
       </div>
 
       {/* Config */}

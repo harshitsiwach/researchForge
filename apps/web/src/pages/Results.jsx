@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getReport } from '../api'
+import { toast } from '../components/Toast'
 
 function ScoreBar({ label, value, icon }) {
   const getColor = (v) => {
@@ -23,20 +24,23 @@ function ScoreBar({ label, value, icon }) {
   )
 }
 
-function ScenarioCard({ scenario, index }) {
+function ScenarioCard({ scenario, index, id }) {
   const [expanded, setExpanded] = useState(false)
   const probNum = typeof scenario.probability_percentage === 'number' 
     ? scenario.probability_percentage 
-    : parseInt(scenario.probability_percentage) || parseInt(scenario.probability_assessment) || 50;
+    : parseInt(scenario.probability_percentage) || parseInt(scenario.probability_assessment) || 50
 
-  let prob;
-  if (probNum >= 70) prob = { bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: '🟢' };
-  else if (probNum >= 30) prob = { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: '🟡' };
-  else prob = { bg: 'rgba(248,113,113,0.12)', color: '#f87171', icon: '🔴' };
+  let prob
+  if (probNum >= 70) prob = { bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: '🟢' }
+  else if (probNum >= 30) prob = { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: '🟡' }
+  else prob = { bg: 'rgba(248,113,113,0.12)', color: '#f87171', icon: '🔴' }
 
   return (
     <div className="card" style={{ border: '1px solid var(--border)', cursor: 'pointer' }}
-      onClick={() => setExpanded(!expanded)}>
+      onClick={() => setExpanded(!expanded)}
+      role="button" tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && setExpanded(!expanded)}
+      aria-expanded={expanded}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div style={{
@@ -73,7 +77,7 @@ function ScenarioCard({ scenario, index }) {
               <div className="text-sm" style={{ fontWeight: 600, color: 'var(--text-accent)', marginBottom: 6 }}>🔑 Key Drivers</div>
               <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
                 {scenario.key_drivers.map((d, i) => (
-                  <span key={i} style={{
+                  <span key={d || i} style={{
                     padding: '4px 10px', borderRadius: 16, fontSize: 12,
                     background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
                     color: 'var(--text-secondary)',
@@ -86,7 +90,7 @@ function ScenarioCard({ scenario, index }) {
             <div>
               <div className="text-sm" style={{ fontWeight: 600, color: 'var(--error)', marginBottom: 6 }}>⚠️ Risks</div>
               <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
-                {scenario.risks.map((r, i) => <li key={i} style={{ marginBottom: 4 }}>{r}</li>)}
+                {scenario.risks.map((r, i) => <li key={r || i} style={{ marginBottom: 4 }}>{r}</li>)}
               </ul>
             </div>
           )}
@@ -94,7 +98,7 @@ function ScenarioCard({ scenario, index }) {
             <div>
               <div className="text-sm" style={{ fontWeight: 600, color: 'var(--success)', marginBottom: 6 }}>✨ Opportunities</div>
               <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
-                {scenario.opportunities.map((o, i) => <li key={i} style={{ marginBottom: 4 }}>{o}</li>)}
+                {scenario.opportunities.map((o, i) => <li key={o || i} style={{ marginBottom: 4 }}>{o}</li>)}
               </ul>
             </div>
           )}
@@ -128,13 +132,21 @@ export default function Results() {
   const navigate = useNavigate()
   const [report, setReport] = useState(null)
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
 
   useEffect(() => {
     getReport(runId)
-      .then(setReport)
-      .catch(e => setError(e.message))
+      .then(data => { setReport(data); setLoading(false) })
+      .catch(e => { setError(e.message); setLoading(false) })
   }, [runId])
+
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: 16 }}>
+      <div className="spinner" style={{ width: 32, height: 32 }} />
+      <span className="text-muted">Loading report...</span>
+    </div>
+  )
 
   if (error) return (
     <div className="card" style={{ maxWidth: 500, margin: '60px auto', textAlign: 'center' }}>
@@ -146,22 +158,15 @@ export default function Results() {
     </div>
   )
 
-  if (!report) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: 16 }}>
-      <div className="spinner" style={{ width: 32, height: 32 }} />
-      <span className="text-muted">Loading report...</span>
-    </div>
-  )
-
   const score = report.eval_score || {}
   const composite = Object.values(score).length > 0
     ? Object.values(score).reduce((a, b) => a + b, 0) / Object.values(score).length
     : 0
 
   const tabs = [
-    { id: 'overview', label: '📊 Overview', icon: '' },
-    { id: 'scenarios', label: '🌐 Scenarios', icon: '' },
-    { id: 'report', label: '📝 Full Report', icon: '' },
+    { id: 'overview', label: '📊 Overview' },
+    { id: 'scenarios', label: '🌐 Scenarios' },
+    { id: 'report', label: '📝 Full Report' },
   ]
 
   return (
@@ -176,7 +181,7 @@ export default function Results() {
             justifyContent: 'center', fontSize: 24,
           }}>📄</div>
           <div>
-            <h1 className="page-title" style={{ fontSize: 24 }}>{report.title || 'Research Report'}</h1>
+            <h1 className="page-title">{report.title || 'Research Report'}</h1>
             <p className="page-subtitle">
               Run <span className="font-mono">{runId}</span> · Generated {report.created_at?.slice(0, 19)}
             </p>
@@ -201,11 +206,7 @@ export default function Results() {
           <div className="text-sm text-muted mt-2">out of 100</div>
           <div className="flex gap-4 mt-4" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
             {Object.entries(score).map(([k, v]) => (
-              <div key={k} style={{
-                padding: '6px 12px', borderRadius: 'var(--radius-sm)',
-                background: 'rgba(15,23,42,0.6)', border: '1px solid var(--border)',
-                fontSize: 12,
-              }}>
+              <div key={k} className="stat-box">
                 <span className="text-muted">{k}: </span>
                 <span style={{ fontWeight: 600, color: v >= 70 ? 'var(--success)' : v >= 50 ? 'var(--text-accent)' : 'var(--warning)' }}>{v.toFixed(1)}</span>
               </div>
@@ -248,41 +249,25 @@ export default function Results() {
           <div className="card">
             <div className="card-title mb-4">📋 Report Summary</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div style={{
-                padding: 16, borderRadius: 'var(--radius-sm)',
-                background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}>
+              <div className="stat-box">
                 <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-accent)' }}>
                   {report.scenarios?.length || 0}
                 </div>
                 <div className="text-sm text-muted">Scenarios</div>
               </div>
-              <div style={{
-                padding: 16, borderRadius: 'var(--radius-sm)',
-                background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}>
+              <div className="stat-box">
                 <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-accent)' }}>
                   {report.content_md?.split('\n').length || 0}
                 </div>
                 <div className="text-sm text-muted">Lines</div>
               </div>
-              <div style={{
-                padding: 16, borderRadius: 'var(--radius-sm)',
-                background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}>
+              <div className="stat-box">
                 <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-accent)' }}>
                   {Math.round((report.content_md?.length || 0) / 5)}
                 </div>
                 <div className="text-sm text-muted">Words (est.)</div>
               </div>
-              <div style={{
-                padding: 16, borderRadius: 'var(--radius-sm)',
-                background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)',
-                textAlign: 'center',
-              }}>
+              <div className="stat-box">
                 <div style={{ fontSize: 28, fontWeight: 700, color: composite >= 70 ? 'var(--success)' : composite >= 50 ? 'var(--text-accent)' : 'var(--warning)' }}>
                   {composite >= 70 ? 'A' : composite >= 50 ? 'B' : 'C'}
                 </div>
@@ -308,7 +293,7 @@ export default function Results() {
           {report.scenarios?.length > 0 ? (
             <div className="flex flex-col gap-3">
               {report.scenarios.map((s, i) => (
-                <ScenarioCard key={i} scenario={s} index={i} />
+                <ScenarioCard key={s.id || `scenario-${i}`} scenario={s} index={i} id={s.id} />
               ))}
             </div>
           ) : (

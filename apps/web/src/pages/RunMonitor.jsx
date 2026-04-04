@@ -1,24 +1,31 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getRun, stopRun } from '../api'
 import PixelScene from '../features/simulation-visualization/components/PixelScene'
 import { useVizStore } from '../features/simulation-visualization/store/visualizationStore'
+import { toast } from '../components/Toast'
+
+const POLL_INTERVAL = 2000
 
 export default function RunMonitor() {
   const { runId } = useParams()
   const navigate = useNavigate()
   const [run, setRun] = useState(null)
+  const [loading, setLoading] = useState(true)
   const { connect, disconnect, timeline } = useVizStore()
+  const mountedRef = useRef(true)
 
-  const feedEvents = timeline.filter(e => 
+  const feedEvents = timeline.filter(e =>
     e.type === 'tool_called' || e.type === 'tool_result' || e.type === 'live_data_received'
   )
 
   useEffect(() => {
+    mountedRef.current = true
     loadRun()
     connect(runId)
-    const interval = setInterval(loadRun, 2000)
+    const interval = setInterval(loadRun, POLL_INTERVAL)
     return () => {
+      mountedRef.current = false
       clearInterval(interval)
       disconnect()
     }
@@ -27,23 +34,27 @@ export default function RunMonitor() {
   async function loadRun() {
     try {
       const r = await getRun(runId)
-      setRun(r)
+      if (mountedRef.current) {
+        setRun(r)
+        setLoading(false)
+      }
     } catch (e) {
       console.error(e)
     }
   }
 
   async function handleStop() {
-    if (!window.confirm("Are you sure you want to stop this simulation?")) return;
+    if (!window.confirm("Are you sure you want to stop this simulation?")) return
     try {
       await stopRun(runId)
       await loadRun()
+      toast.info('Simulation stopped')
     } catch (e) {
-      alert("Failed to stop run")
+      toast.error('Failed to stop run')
     }
   }
 
-  if (!run) return (
+  if (loading || !run) return (
     <div className="flex items-center gap-4 mt-12 animate-in">
       <div className="spinner" style={{ width: 24, height: 24 }} />
       <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>CONNECTING TO OBSERVATION LINK...</span>
@@ -59,7 +70,7 @@ export default function RunMonitor() {
           </div>
           <h1 className="page-title">Run Monitor</h1>
           <div className="flex items-center gap-3 mt-2">
-            <span className={`badge badge-${run.status}`}>
+            <span className={`badge badge-${run.status}`} aria-live="polite">
               <span className="badge-dot" />
               {run.status.toUpperCase()}
             </span>
@@ -109,7 +120,7 @@ export default function RunMonitor() {
         {/* Sidebar: Unit Stats & Live Feeds */}
         <div className="flex flex-col gap-4">
           <div className="card" style={{ flex: 1, maxHeight: '300px', overflowY: 'auto' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '16px' }}>UNIT_TELEMETRY</div>
+            <div className="panel-header">UNIT_TELEMETRY</div>
             
             <div className="flex flex-col gap-6">
               <div>
@@ -139,28 +150,22 @@ export default function RunMonitor() {
           </div>
 
           <div className="card" style={{ flex: 1, maxHeight: '334px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '16px', display: 'flex', justifyContent: 'space-between' }}>
+            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>LIVE_INTEL_FEED</span>
-              {feedEvents.length > 0 && <span className="animate-pulse text-green-400">● ACTIVE</span>}
+              {feedEvents.length > 0 && <span style={{ color: 'var(--success)' }}>● ACTIVE</span>}
             </div>
             
-            <div className="flex flex-col gap-3 overflow-y-auto pr-1" style={{ flex: 1 }}>
+            <div className="flex flex-col gap-3" style={{ flex: 1 }}>
               {feedEvents.length === 0 ? (
-                <div className="text-muted text-xs flex items-center justify-center h-full" style={{ opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
+                <div style={{ opacity: 0.5, fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                   AWAITING_EXTERNAL_DATA...
                 </div>
               ) : (
-                feedEvents.reverse().map((evt, i) => (
-                  <div key={i} style={{ 
-                    background: 'rgba(0,0,0,0.4)', 
-                    border: '1px solid var(--border)', 
-                    borderLeft: `2px solid ${evt.type === 'tool_result' ? 'var(--text-accent)' : 'var(--text-neon)'}`,
-                    padding: '8px 10px',
-                    borderRadius: '4px'
-                  }}>
+                [...feedEvents].reverse().map((evt) => (
+                  <div key={evt.id || evt.timestamp || `${evt.type}-${evt.round}`} className={`feed-item ${evt.type === 'tool_result' ? 'feed-item-accent' : 'feed-item-neon'}`}>
                     <div style={{ fontSize: '10px', fontWeight: 600, color: evt.type === 'tool_result' ? 'var(--text-accent)' : 'var(--text-neon)', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                       <span style={{ fontFamily: 'var(--font-mono)' }}>{evt.type === 'tool_result' ? `🔧 TOOL: ${evt.toolId}` : `📡 LIVE: ${evt.sourceType?.toUpperCase()}`}</span>
-                      <span className="text-muted" style={{ fontFamily: 'var(--font-mono)' }}>R{evt.round}</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>R{evt.round}</span>
                     </div>
                     {evt.type === 'tool_result' ? (
                       <div>
@@ -190,7 +195,7 @@ export default function RunMonitor() {
       {/* Log Console */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700 }}>CONSOLE_LOG_STREAM</div>
+          <div className="panel-header" style={{ marginBottom: 0 }}>CONSOLE_LOG_STREAM</div>
           <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>T_OFFSET: +00:00:42.5</div>
         </div>
         <div className="log-viewer" style={{ border: '1px solid var(--border)', background: 'rgba(0,0,0,0.6)', maxHeight: '200px' }}>

@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react'
 import { listTools, toggleTool, testTool } from '../api'
+import { toast } from '../components/Toast'
+import PageLoading from '../components/PageLoading'
 
 export default function Toolbox() {
   const [tools, setTools] = useState([])
-  const [testing, setTesting] = useState({}) // { toolId: true }
-  const [testResults, setTestResults] = useState({}) // { toolId: string }
-  const [testQueries, setTestQueries] = useState({}) // { toolId: string }
+  const [testing, setTesting] = useState({})
+  const [testResults, setTestResults] = useState({})
+  const [testQueries, setTestQueries] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => { load() }, [])
 
@@ -15,15 +19,19 @@ export default function Toolbox() {
       setTools(t)
     } catch (e) {
       console.error(e)
+      setError('Failed to load tools')
+      toast.error('Failed to load tool registry')
     }
+    setLoading(false)
   }
 
   async function handleToggle(toolId) {
     try {
       const res = await toggleTool(toolId)
       setTools(prev => prev.map(t => t.id === toolId ? { ...t, enabled: res.enabled } : t))
+      toast.info(res.enabled ? 'Tool enabled' : 'Tool disabled')
     } catch (e) {
-      console.error(e)
+      toast.error('Failed to toggle tool')
     }
   }
 
@@ -60,6 +68,19 @@ export default function Toolbox() {
   }
 
   const enabledCount = tools.filter(t => t.enabled).length
+
+  if (loading) return <PageLoading message="LOADING TOOL REGISTRY..." />
+
+  if (error && tools.length === 0) {
+    return (
+      <div className="empty-state animate-in">
+        <div className="empty-icon">🧰</div>
+        <h2 className="empty-title" style={{ fontSize: '24px', color: '#fff' }}>Tool Registry Unavailable</h2>
+        <p className="empty-text">{error}. Please ensure the backend API is running.</p>
+        <button className="btn btn-primary" onClick={load} style={{ marginTop: '24px' }}>Retry</button>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -121,6 +142,8 @@ export default function Toolbox() {
                     position: 'relative', transition: 'all 0.3s ease',
                     boxShadow: tool.enabled ? '0 0 10px rgba(52,211,153,0.3)' : 'none',
                   }}
+                  aria-label={`Toggle ${tool.name}`}
+                  aria-pressed={tool.enabled}
                 >
                   <div style={{
                     width: 20, height: 20, borderRadius: '50%',
@@ -174,14 +197,6 @@ export default function Toolbox() {
           )
         })}
       </div>
-
-      {tools.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">🧰</div>
-          <div className="empty-title">Loading tools…</div>
-          <div className="empty-text">Connecting to tool registry</div>
-        </div>
-      )}
     </div>
   )
 }

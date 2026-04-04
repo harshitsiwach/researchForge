@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getSettings, updateSettings } from '../api'
+import { toast } from '../components/Toast'
+import PageLoading from '../components/PageLoading'
 
 export default function Settings() {
   const [form, setForm] = useState({
@@ -15,11 +17,15 @@ export default function Settings() {
   const [testResult, setTestResult] = useState(null)
   const [models, setModels] = useState([])
   const [loadingModels, setLoadingModels] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getSettings().then(s => {
-      setForm(prev => ({ ...prev, ...s }))
-    }).catch(() => {})
+    getSettings()
+      .then(s => {
+        setForm(prev => ({ ...prev, ...s }))
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
   async function handleSave(e) {
@@ -29,9 +35,10 @@ export default function Settings() {
       const updated = await updateSettings(form)
       setForm(prev => ({ ...prev, ...updated }))
       setSaved(true)
+      toast.success('Settings saved successfully')
       setTimeout(() => setSaved(false), 3000)
     } catch (e) {
-      alert('Save failed: ' + e.message)
+      toast.error('Save failed: ' + e.message)
     }
     setSaving(false)
   }
@@ -40,13 +47,15 @@ export default function Settings() {
     setTesting(true)
     setTestResult(null)
     try {
-      // Save first so the backend uses the latest values
       await updateSettings(form)
       const res = await fetch('/api/settings/test-connection', { method: 'POST' })
       const data = await res.json()
       setTestResult(data)
+      if (data.connected) toast.success('Connection successful!')
+      else toast.error('Connection failed')
     } catch (e) {
       setTestResult({ connected: false, error: e.message })
+      toast.error('Test request failed')
     }
     setTesting(false)
   }
@@ -59,7 +68,7 @@ export default function Settings() {
       const data = await res.json()
       if (data.models) setModels(data.models)
     } catch (e) {
-      console.error(e)
+      toast.error('Failed to load models')
     }
     setLoadingModels(false)
   }
@@ -87,8 +96,10 @@ export default function Settings() {
     },
   ]
 
+  if (loading) return <PageLoading message="LOADING SETTINGS..." />
+
   return (
-    <div>
+    <div className="animate-in">
       <div className="page-header">
         <h1 className="page-title">Settings</h1>
         <p className="page-subtitle">Connect your local or remote LLM to power research simulations</p>
@@ -100,15 +111,12 @@ export default function Settings() {
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}>
           {presets.map(p => (
             <div key={p.name}
-              className="card"
-              style={{
-                cursor: p.config ? 'pointer' : 'default',
-                textAlign: 'center',
-                padding: '20px 16px',
-                borderColor: p.config && form.llm_base_url === p.config.llm_base_url ? 'var(--accent)' : undefined,
-                boxShadow: p.config && form.llm_base_url === p.config.llm_base_url ? 'var(--shadow-glow)' : undefined,
-              }}
-              onClick={() => p.config && setForm(prev => ({ ...prev, ...p.config }))}>
+              className={`card preset-card ${p.config && form.llm_base_url === p.config.llm_base_url ? 'preset-card-selected' : ''}`}
+              onClick={() => p.config && setForm(prev => ({ ...prev, ...p.config }))}
+              role={p.config ? 'button' : undefined}
+              tabIndex={p.config ? 0 : undefined}
+              onKeyDown={e => p.config && e.key === 'Enter' && setForm(prev => ({ ...prev, ...p.config }))}
+              aria-pressed={p.config && form.llm_base_url === p.config.llm_base_url}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>{p.icon}</div>
               <div className="card-title" style={{ fontSize: 14 }}>{p.name}</div>
               {p.config && (
