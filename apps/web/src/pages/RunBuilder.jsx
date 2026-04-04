@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { createRun, listSeeds } from '../api'
 import { toast } from '../components/Toast'
+import { Telescope, Target, Scale, RefreshCw, FileText, Infinity, Rocket, ArrowLeft, Check } from 'lucide-react'
 
 const MODES = [
-  { value: 'explore', label: '🔭 Explore', desc: 'Open-ended research, generate hypotheses and scenario branches' },
-  { value: 'decision', label: '🎯 Decision', desc: 'Stress-test a plan, idea, or draft through simulation and critique' },
-  { value: 'compare', label: '⚖️ Compare', desc: 'Compare alternatives like product ideas, pricing, or architectures' },
-  { value: 'improve', label: '🔄 Improve', desc: 'Run a controlled experiment to find better research configs' },
+  { value: 'explore', label: 'Explore', desc: 'Open-ended research, generate hypotheses and scenario branches', icon: Telescope },
+  { value: 'decision', label: 'Decision', desc: 'Stress-test a plan, idea, or draft through simulation and critique', icon: Target },
+  { value: 'compare', label: 'Compare', desc: 'Compare alternatives like product ideas, pricing, or architectures', icon: Scale },
+  { value: 'improve', label: 'Improve', desc: 'Run a controlled experiment to find better research configs', icon: RefreshCw },
 ]
 
 export default function RunBuilder() {
@@ -46,7 +47,7 @@ export default function RunBuilder() {
         endless_mode: endlessMode,
         seed_ids: selectedSeeds,
       })
-      toast.success('Simulation launched successfully')
+      toast.success('Simulation launched')
       navigate(`/run/${result.run_id}`)
     } catch (e) {
       toast.error('Failed to launch: ' + e.message)
@@ -72,7 +73,7 @@ export default function RunBuilder() {
     <div>
       <div className="page-header">
         <button className="btn btn-ghost btn-sm mb-2"
-          onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}>← Back to Project</button>
+          onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}><ArrowLeft size={16} /> Back to Project</button>
         <h1 className="page-title">Launch Run</h1>
         <p className="page-subtitle">Configure and launch a simulation run</p>
       </div>
@@ -81,24 +82,30 @@ export default function RunBuilder() {
       <div className="card mb-4">
         <div className="card-title mb-4">Select Mode</div>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))' }}>
-          {MODES.map(m => (
-            <div key={m.value}
-              className={`card mode-card ${mode === m.value ? 'mode-card-selected' : ''}`}
-              onClick={() => setMode(m.value)}
-              role="button" tabIndex={0}
-              onKeyDown={e => e.key === 'Enter' && setMode(m.value)}
-              aria-pressed={mode === m.value}>
-              <div className="card-title">{m.label}</div>
-              <p className="text-sm text-muted mt-2">{m.desc}</p>
-            </div>
-          ))}
+          {MODES.map(m => {
+            const Icon = m.icon
+            return (
+              <div key={m.value}
+                className={`card mode-card ${mode === m.value ? 'mode-card-selected' : ''}`}
+                onClick={() => setMode(m.value)}
+                role="button" tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && setMode(m.value)}
+                aria-pressed={mode === m.value}>
+                <div style={{ marginBottom: '8px', color: mode === m.value ? 'var(--on-primary-container)' : 'var(--on-surface-variant)' }}>
+                  <Icon size={24} />
+                </div>
+                <div className="card-title">{m.label}</div>
+                <p className="text-sm text-muted mt-2">{m.desc}</p>
+              </div>
+            )
+          })}
         </div>
       </div>
 
       {/* Seed Selection */}
       <div className="card mb-4">
         <div className="card-header">
-          <div className="card-title">📄 Select Seeds</div>
+          <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><FileText size={18} /> Select Seeds</div>
           <div className="flex gap-2">
             <button className="btn btn-ghost btn-sm" onClick={selectAllSeeds} disabled={seeds.length === 0}>Select All</button>
             <button className="btn btn-ghost btn-sm" onClick={clearAllSeeds} disabled={selectedSeeds.length === 0}>Clear</button>
@@ -116,20 +123,20 @@ export default function RunBuilder() {
               <div key={s.id}
                 className="flex items-center gap-3"
                 style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-                  background: selectedSeeds.includes(s.id) ? 'rgba(99,102,241,0.1)' : 'rgba(15,23,42,0.5)',
-                  border: `1px solid ${selectedSeeds.includes(s.id) ? 'var(--accent-indigo)' : 'var(--border)'}`,
+                  background: selectedSeeds.includes(s.id) ? 'var(--primary-container)' : 'var(--surface-container-high)',
+                  border: `1px solid ${selectedSeeds.includes(s.id) ? 'var(--primary)' : 'var(--outline-variant)'}`,
                   cursor: 'pointer' }}
                 onClick={() => toggleSeed(s.id)}
                 role="checkbox" aria-checked={selectedSeeds.includes(s.id)} tabIndex={0}
                 onKeyDown={e => e.key === ' ' && (e.preventDefault(), toggleSeed(s.id))}>
                 <div style={{
-                  width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                  border: `2px solid ${selectedSeeds.includes(s.id) ? 'var(--accent-indigo)' : 'var(--border)'}`,
-                  background: selectedSeeds.includes(s.id) ? 'var(--accent-indigo)' : 'transparent',
+                  width: 20, height: 20, borderRadius: 4, flexShrink: 0,
+                  border: `2px solid ${selectedSeeds.includes(s.id) ? 'var(--primary)' : 'var(--outline)'}`,
+                  background: selectedSeeds.includes(s.id) ? 'var(--primary)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'white', fontSize: 12, transition: 'all 0.2s'
+                  color: 'white', transition: 'all 0.2s'
                 }}>
-                  {selectedSeeds.includes(s.id) && '✓'}
+                  {selectedSeeds.includes(s.id) && <Check size={12} />}
                 </div>
                 <span className="text-sm" style={{ flex: 1 }}>{s.filename}</span>
                 <span className="text-sm text-muted">{s.created_at?.slice(0, 10)}</span>
@@ -172,13 +179,13 @@ export default function RunBuilder() {
               <option value="aggressive">Aggressive</option>
             </select>
           </div>
-          <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--surface-sunken)', borderRadius: 'var(--radius-sm)' }}>
+          <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', background: 'var(--surface-container-high)', borderRadius: 'var(--radius-sm)' }}>
             <input type="checkbox" id="endlessToggle" 
               checked={endlessMode} onChange={e => setEndlessMode(e.target.checked)}
-              style={{ width: '16px', height: '16px', accentColor: 'var(--accent)' }}/>
+              style={{ width: '16px', height: '16px', accentColor: 'var(--primary)' }}/>
             <div>
-              <label htmlFor="endlessToggle" className="form-label mb-0" style={{ cursor: 'pointer', display: 'block' }}>♾️ Endless Mode (Living Lab)</label>
-              <div className="text-xs text-muted" style={{ marginTop: '2px' }}>Run agents continuously, injecting new live data streams endlessly until manually stopped.</div>
+              <label htmlFor="endlessToggle" className="form-label mb-0" style={{ cursor: 'pointer', display: 'block' }}>Continuous Mode</label>
+              <div className="text-sm text-muted" style={{ marginTop: '2px' }}>Run agents continuously, injecting new live data streams until manually stopped.</div>
             </div>
           </div>
         </div>
@@ -190,7 +197,7 @@ export default function RunBuilder() {
         {launching ? (
           <><div className="spinner" style={{ width: 16, height: 16 }} /> Launching...</>
         ) : (
-          '🚀 Launch Simulation Run'
+          <><Rocket size={18} /> Launch Simulation</>
         )}
       </button>
     </div>

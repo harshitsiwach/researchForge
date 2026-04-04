@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { getActiveJobs } from '../api'
+import { ArrowRight } from 'lucide-react'
 
 const POLL_INTERVAL = 5000
 
@@ -50,11 +51,11 @@ export default function GlobalActiveTaskBar() {
       <div className="flex items-center gap-4 w-full" style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px' }}>
         <div className="active-pulse"></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, letterSpacing: '0.05em' }}>
-            {mainJob.topic ? 'AUTO-RESEARCH ACTIVE' : 'SIMULATION RUNNING'}
+          <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
+            {mainJob.topic ? 'Auto-Research Active' : 'Simulation Running'}
           </div>
-          <div style={{ fontSize: '13px', color: '#fff', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {mainJob.topic || `Sequence ID: ${mainJob.id.slice(0, 8)}`}
+          <div style={{ fontSize: '13px', color: 'var(--on-surface)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {mainJob.topic || mainJob.id.slice(0, 8)}
           </div>
         </div>
         
@@ -62,8 +63,8 @@ export default function GlobalActiveTaskBar() {
           <div className="loading-bar-mini">
             <div className="loading-bar-fill-animated"></div>
           </div>
-          <div className="btn btn-ghost btn-sm" style={{ border: '1px solid rgba(0, 255, 163, 0.2)', color: 'var(--text-neon)' }}>
-            View Live {activeJobs.total_active > 1 ? `(${activeJobs.total_active})` : ''} →
+          <div className="btn btn-ghost btn-sm" style={{ color: 'var(--primary)' }}>
+            View Live {activeJobs.total_active > 1 ? `(${activeJobs.total_active})` : ''} <ArrowRight size={14} />
           </div>
         </div>
       </div>

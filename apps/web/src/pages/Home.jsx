@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { listWorkspaces, createWorkspace, createProject, listRuns } from '../api'
+import { listWorkspaces, createWorkspace, createProject } from '../api'
 import { toast } from '../components/Toast'
+import { Plus, Clock, ShieldCheck, FlaskConical, ArrowRight } from 'lucide-react'
 
 export default function Home() {
   const [workspaces, setWorkspaces] = useState([])
@@ -68,7 +69,7 @@ export default function Home() {
       setWsName('')
       setShowNew(false)
       load()
-      toast.success('Workspace created successfully')
+      toast.success('Workspace created')
     } catch (e) {
       toast.error(e.message || 'Failed to create workspace')
     }
@@ -82,7 +83,7 @@ export default function Home() {
       setProjName('')
       setProjQuestion('')
       setShowProject(null)
-      toast.success('Project deployed successfully')
+      toast.success('Project created')
       navigate(`/workspace/${showProject}/project/${proj.id}`)
     } catch (e) {
       toast.error(e.message || 'Failed to create project')
@@ -97,50 +98,44 @@ export default function Home() {
     <div className="animate-in">
       <div className="page-header flex justify-between items-end">
         <div>
-          <div style={{ color: 'var(--text-neon)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '8px' }}>
-            RESEARCH CLUSTER // DASHBOARD
-          </div>
-          <h1 className="page-title">Laboratory Overview</h1>
-          <p className="page-subtitle">Orchestrate simulations and analyze emergent agent behaviors across your workspaces.</p>
+          <h1 className="page-title">Research Workspaces</h1>
+          <p className="page-subtitle">Create and manage research projects across your workspaces.</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }}>
-          <span style={{ fontSize: '18px' }}>+</span> New Research Unit
+          <Plus size={18} /> New Workspace
         </button>
       </div>
 
       {loading ? (
         <div className="flex items-center gap-4 mt-12">
           <div className="spinner" style={{ width: 24, height: 24 }} />
-          <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '13px' }}>INITIALIZING DATA CLUSTER...</span>
+          <span style={{ color: 'var(--on-surface-variant)', fontSize: '14px' }}>Loading workspaces...</span>
         </div>
       ) : workspaces.length === 0 ? (
         <div className="empty-state animate-in">
-          <div className="empty-icon" style={{ opacity: 0.8, filter: 'drop-shadow(0 0 10px var(--accent-indigo))' }}>🧪</div>
-          <h2 className="empty-title" style={{ fontSize: '24px', color: '#fff' }}>No Active Units Found</h2>
-          <p className="empty-text">Initialize your first research workspace to begin generating scenarios and monitoring agent interactions.</p>
-          <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }} style={{ marginTop: '32px' }}>
-            Initialize Workspace
+          <div className="empty-icon"><FlaskConical size={48} /></div>
+          <h2 className="empty-title">No workspaces yet</h2>
+          <p className="empty-text">Create your first workspace to start running multi-agent research simulations.</p>
+          <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }} style={{ marginTop: '24px' }}>
+            Create Workspace
           </button>
         </div>
       ) : (
         <div className="card-grid">
           {workspaces.map((ws, i) => (
             <div key={ws.id} className="card animate-in" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div style={{ position: 'absolute', top: 0, right: 0, width: '100px', height: '100px', background: 'radial-gradient(circle at top right, rgba(99, 102, 241, 0.08), transparent)', pointerEvents: 'none' }}></div>
-              
               <div className="card-header">
                 <div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-neon)', fontWeight: 700, marginBottom: '4px' }}>UNIT ID: {ws.id.slice(0, 8).toUpperCase()}</div>
-                  <div className="card-title" style={{ fontSize: '20px' }}>{ws.name}</div>
-                  <div className="card-subtitle" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', opacity: 0.6 }}>
-                    CREATED_STAMP: {ws.created_at?.slice(0, 10)}
+                  <div className="card-title" style={{ fontSize: '18px' }}>{ws.name}</div>
+                  <div className="card-subtitle">
+                    Created {ws.created_at?.slice(0, 10)}
                   </div>
                 </div>
               </div>
 
-              <div style={{ margin: '20px 0', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.03)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  <span>NEURAL LOAD</span>
+              <div style={{ margin: '16px 0', padding: '12px', background: 'var(--surface-container-high)', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--on-surface-variant-muted)', marginBottom: '6px' }}>
+                  <span>Activity</span>
                   <span>42%</span>
                 </div>
                 <div className="score-bar" style={{ height: '4px' }}>
@@ -152,8 +147,8 @@ export default function Home() {
                 <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setShowProject(ws.id)}>
                   + New Project
                 </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/workspace/${ws.id}/project/list`)} style={{ border: '1px solid var(--border)' }}>
-                  Enter Hub →
+                <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/workspace/${ws.id}/project/list`)}>
+                  Open <ArrowRight size={14} />
                 </button>
               </div>
             </div>
@@ -164,12 +159,14 @@ export default function Home() {
       {recentRuns.length > 0 && (
         <div className="card mt-6 animate-in" style={{ animationDelay: '0.3s' }}>
           <div className="card-header">
-            <div className="card-title">🕐 Recent Runs</div>
+            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={18} /> Recent Runs
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             {recentRuns.map(run => (
               <div key={run.id} className="flex items-center justify-between"
-                style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'rgba(15,23,42,0.5)', border: '1px solid var(--border)', cursor: 'pointer' }}
+                style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-container-high)', border: '1px solid var(--outline-variant)', cursor: 'pointer' }}
                 onClick={() => navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}
                 role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}>
                 <div>
@@ -189,11 +186,13 @@ export default function Home() {
       {promotedConfig && (
         <div className="card mt-4 animate-in" style={{ animationDelay: '0.4s', borderColor: 'var(--success)' }}>
           <div className="card-header">
-            <div className="card-title" style={{ color: 'var(--success)' }}>🛡️ Promoted Baseline</div>
+            <div className="card-title" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={18} /> Baseline Configuration
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="stat-box" style={{ minWidth: '120px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{promotedConfig.label}</div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--on-surface)' }}>{promotedConfig.label}</div>
               <div className="text-sm text-muted">{promotedConfig.projectName}</div>
             </div>
             <div className="text-sm text-muted">
@@ -205,21 +204,18 @@ export default function Home() {
 
       {showNew && (
         <div className="modal-overlay" onClick={() => setShowNew(false)}>
-          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateWs} role="dialog" aria-modal="true" aria-label="Create Research Unit" ref={modalRef} tabIndex={-1}>
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ color: 'var(--text-neon)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}>CMD: INITIALIZE_UNIT</div>
-              <h2 className="modal-title" style={{ marginBottom: 0 }}>Create Research Unit</h2>
-            </div>
+          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateWs} role="dialog" aria-modal="true" aria-label="Create Workspace" ref={modalRef} tabIndex={-1}>
+            <h2 className="modal-title">Create Workspace</h2>
             
             <div className="form-group">
-              <label className="form-label">Cluster Designation</label>
+              <label className="form-label">Workspace name</label>
               <input className="form-input" value={wsName} onChange={e => setWsName(e.target.value)}
-                placeholder="e.g. ALPHA-STRATEGY-2025" autoFocus />
+                placeholder="e.g. Market Research 2025" autoFocus />
             </div>
             
             <div className="flex gap-3 mt-8">
-              <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowNew(false)}>Abort</button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Initialize Unit</button>
+              <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowNew(false)}>Cancel</button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Create</button>
             </div>
           </form>
         </div>
@@ -227,25 +223,22 @@ export default function Home() {
 
       {showProject && (
         <div className="modal-overlay" onClick={() => setShowProject(null)}>
-          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateProject} role="dialog" aria-modal="true" aria-label="New Subject Analysis" ref={projectModalRef} tabIndex={-1}>
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ color: 'var(--text-neon)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '4px' }}>CMD: DEPLOY_PROJECT</div>
-              <h2 className="modal-title" style={{ marginBottom: 0 }}>New Subject Analysis</h2>
-            </div>
+          <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateProject} role="dialog" aria-modal="true" aria-label="New Project" ref={projectModalRef} tabIndex={-1}>
+            <h2 className="modal-title">New Project</h2>
             
             <div className="form-group">
-              <label className="form-label">Analysis ID</label>
+              <label className="form-label">Project name</label>
               <input className="form-input" value={projName} onChange={e => setProjName(e.target.value)}
-                placeholder="e.g. MARKET_SENTIMENT_SCAN" autoFocus />
+                placeholder="e.g. Market Sentiment Analysis" autoFocus />
             </div>
             <div className="form-group">
-              <label className="form-label">Research Hypothesis</label>
+              <label className="form-label">Research question</label>
               <textarea className="form-textarea" value={projQuestion} onChange={e => setProjQuestion(e.target.value)}
-                placeholder="DEFINE_QUESTION_HERE..." />
+                placeholder="What question are you trying to answer?" />
             </div>
             <div className="flex gap-3 mt-8">
               <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowProject(null)}>Cancel</button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Deploy Project</button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Create Project</button>
             </div>
           </form>
         </div>

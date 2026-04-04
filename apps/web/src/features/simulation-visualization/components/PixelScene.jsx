@@ -31,14 +31,14 @@ export default function PixelScene({ runId }) {
       {/* ── Main Scene ── */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        background: 'var(--bg-secondary)',
+        background: 'var(--surface-container-highest)',
         backgroundImage: `
-          linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(99, 102, 241, 0.05) 1px, transparent 1px)
+          linear-gradient(var(--outline-variant) 1px, transparent 1px),
+          linear-gradient(90deg, var(--outline-variant) 1px, transparent 1px)
         `,
         backgroundSize: '40px 40px',
-        border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 32,
-        position: 'relative', boxShadow: 'inset 0 0 60px rgba(0,0,0,0.4)',
+        border: '1px solid var(--outline-variant)', borderRadius: 'var(--radius-lg)', padding: 32,
+        position: 'relative',
       }}>
         {/* Header Overlay */}
         <div style={{
@@ -81,7 +81,7 @@ export default function PixelScene({ runId }) {
         {/* Research Desks */}
         <div style={{ 
           paddingTop: 24, borderTop: '1px solid var(--border)', position: 'relative',
-          background: 'rgba(255,255,255,0.01)', margin: '0 -32px -32px', padding: '24px 32px'
+          background: 'var(--surface-container)', margin: '0 -32px -32px', padding: '24px 32px'
         }}>
           <div style={{ 
             position: 'absolute', top: 8, right: 32, fontSize: 9, 
@@ -102,7 +102,7 @@ export default function PixelScene({ runId }) {
 
         {/* Agent Inspector */}
         <div className="card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-container-high)' }}>
             <div style={{ color: 'var(--text-neon)', fontSize: '9px', fontWeight: 700, marginBottom: '4px' }}>UNIT_INSPECTOR</div>
             <span style={{ fontSize: 16, fontWeight: 600, fontFamily: 'var(--font-display)' }}>Subject Analysis</span>
           </div>
@@ -112,7 +112,7 @@ export default function PixelScene({ runId }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 20, marginBottom: 20, borderBottom: '1px solid var(--border)' }}>
                   <div style={{ 
                     width: 52, height: 52, borderRadius: 'var(--radius-md)', 
-                    background: 'var(--bg-secondary)', border: '1px solid var(--border-hover)',
+                    background: 'var(--surface-container-highest)', border: '1px solid var(--outline)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24
                   }}>
                     {selectedAgent.id === 'system' ? '⬡' : '🤖'}
@@ -134,8 +134,8 @@ export default function PixelScene({ runId }) {
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>NEURAL_OUTPUT</div>
                   <div style={{ 
-                    background: 'rgba(0,0,0,0.3)', padding: 16, borderRadius: 'var(--radius-md)', 
-                    fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, border: '1px solid var(--border)' 
+                    background: 'var(--surface-container-highest)', padding: 16, borderRadius: 'var(--radius-md)', 
+                    fontSize: '13px', color: 'var(--on-surface-variant)', lineHeight: 1.6, border: '1px solid var(--outline-variant)' 
                   }}>
                     <span style={{ color: 'var(--text-neon)', fontSize: '18px', marginRight: '4px' }}>“</span>
                     {selectedAgent.message || 'IDLE_STATE: AWAITING_INPUT'}
@@ -168,7 +168,7 @@ export default function PixelScene({ runId }) {
 
         {/* Activity Log */}
         <div className="card" style={{ height: '300px', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--outline-variant)', background: 'var(--surface-container-high)' }}>
             <div style={{ color: 'var(--text-neon)', fontSize: '9px', fontWeight: 700, marginBottom: '4px' }}>EVENT_LOG</div>
             <span style={{ fontSize: 14, fontWeight: 600 }}>Activity Stream</span>
           </div>

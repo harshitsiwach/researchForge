@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { listRuns, compareRuns, promoteConfig } from '../api'
 import { toast } from '../components/Toast'
 import PageLoading from '../components/PageLoading'
+import { Scale, Trophy, Shield, Handshake, ArrowLeft, ArrowUp } from 'lucide-react'
 
 function ScoreBar({ label, value, delta }) {
   return (
@@ -15,7 +16,7 @@ function ScoreBar({ label, value, delta }) {
       {delta !== undefined && (
         <span style={{
           fontSize: 12, fontWeight: 600, minWidth: 42,
-          color: delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--error)' : 'var(--text-muted)'
+          color: delta > 0 ? 'var(--success)' : delta < 0 ? 'var(--error)' : 'var(--on-surface-variant-muted)'
         }}>
           {delta > 0 ? '+' : ''}{delta.toFixed(1)}
         </span>
@@ -70,27 +71,27 @@ export default function Compare() {
     setPromoting(true)
     try {
       await promoteConfig(projId, runId)
-      toast.success('Config promoted to new baseline!')
+      toast.success('Config promoted to new baseline')
     } catch (e) {
       toast.error('Promote failed: ' + e.message)
     }
     setPromoting(false)
   }
 
-  if (loadingRuns) return <PageLoading message="LOADING RUN DATA..." />
+  if (loadingRuns) return <PageLoading message="Loading run data..." />
 
   if (runs.length < 2) {
     return (
       <div className="animate-in">
         <div className="page-header">
           <button className="btn btn-ghost btn-sm mb-2"
-            onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}>← Back to Project</button>
+            onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}><ArrowLeft size={16} /> Back to Project</button>
           <h1 className="page-title">Compare Runs</h1>
           <p className="page-subtitle">Select a baseline and a challenger run to compare research quality</p>
         </div>
         <div className="empty-state animate-in">
-          <div className="empty-icon">⚖️</div>
-          <h2 className="empty-title" style={{ fontSize: '24px', color: '#fff' }}>Not Enough Data to Compare</h2>
+          <div className="empty-icon"><Scale size={48} /></div>
+          <h2 className="empty-title">Not Enough Data to Compare</h2>
           <p className="empty-text">You need at least 2 completed runs to perform a comparison. Launch more simulation runs and come back once they finish.</p>
           <button className="btn btn-primary" onClick={() => navigate(`/workspace/${wsId}/project/${projId}/run/new`)} style={{ marginTop: '24px' }}>
             Launch New Run
@@ -104,7 +105,7 @@ export default function Compare() {
     <div className="animate-in">
       <div className="page-header">
         <button className="btn btn-ghost btn-sm mb-2"
-          onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}>← Back to Project</button>
+          onClick={() => navigate(`/workspace/${wsId}/project/${projId}`)}><ArrowLeft size={16} /> Back to Project</button>
         <h1 className="page-title">Compare Runs</h1>
         <p className="page-subtitle">Select a baseline and a challenger run to compare research quality</p>
       </div>
@@ -130,7 +131,7 @@ export default function Compare() {
         </div>
         <button className="btn btn-primary mt-4" onClick={handleCompare}
           disabled={loading || !baselineId || !challengerId}>
-          {loading ? <><div className="spinner" style={{ width: 16, height: 16 }} /> Evaluating...</> : '⚖️ Compare Now'}
+          {loading ? <><div className="spinner" style={{ width: 16, height: 16 }} /> Evaluating...</> : <><Scale size={16} /> Compare</>}
         </button>
       </div>
 
@@ -140,21 +141,21 @@ export default function Compare() {
           {/* Winner banner */}
           <div className="card mb-4" style={{
             borderColor: result.winner === 'challenger' ? 'var(--success)' :
-              result.winner === 'baseline' ? 'var(--accent)' : 'var(--warning)',
+              result.winner === 'baseline' ? 'var(--primary)' : 'var(--warning)',
             textAlign: 'center', padding: '24px'
           }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>
-              {result.winner === 'challenger' ? '🏆' : result.winner === 'baseline' ? '🛡️' : '🤝'}
+            <div style={{ marginBottom: 8, color: result.winner === 'challenger' ? 'var(--success)' : result.winner === 'baseline' ? 'var(--primary)' : 'var(--warning)' }}>
+              {result.winner === 'challenger' ? <Trophy size={32} /> : result.winner === 'baseline' ? <Shield size={32} /> : <Handshake size={32} />}
             </div>
             <div style={{ fontSize: 18, fontWeight: 600 }}>
               {result.winner === 'challenger' ? 'Challenger wins!' :
-               result.winner === 'baseline' ? 'Baseline holds!' : 'It\'s a tie'}
+               result.winner === 'baseline' ? 'Baseline holds!' : "It's a tie"}
             </div>
             <p className="text-sm text-muted mt-2">{result.recommendation}</p>
             {result.winner === 'challenger' && (
               <button className="btn btn-success mt-4" onClick={() => handlePromote(challengerId)}
                 disabled={promoting}>
-                {promoting ? 'Promoting...' : '↑ Promote Challenger to Baseline'}
+                <ArrowUp size={16} /> Promote to Baseline
               </button>
             )}
           </div>
@@ -162,23 +163,23 @@ export default function Compare() {
           {/* Side by side */}
           <div className="compare-grid">
             <div className={`compare-panel ${result.winner === 'baseline' ? 'winner' : ''}`}>
-              <div className="card-title mb-4">🛡️ Baseline</div>
+              <div className="card-title mb-4" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Shield size={18} /> Baseline</div>
               <div className="text-sm font-mono text-muted mb-4">{result.baseline_run_id}</div>
               {result.baseline_score && Object.entries(result.baseline_score).map(([k, v]) => (
                 <ScoreBar key={k} label={k} value={v} />
               ))}
-              <div className="mt-4" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-accent)' }}>
+              <div className="mt-4" style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>
                 Composite: {(Object.values(result.baseline_score || {}).reduce((a, b) => a + b, 0) / 6).toFixed(1)}
               </div>
             </div>
             <div className={`compare-panel ${result.winner === 'challenger' ? 'winner' : ''}`}>
-              <div className="card-title mb-4">⚔️ Challenger</div>
+              <div className="card-title mb-4">Challenger</div>
               <div className="text-sm font-mono text-muted mb-4">{result.challenger_run_id}</div>
               {result.challenger_score && Object.entries(result.challenger_score).map(([k, v]) => (
                 <ScoreBar key={k} label={k} value={v}
                   delta={result.delta?.[k]} />
               ))}
-              <div className="mt-4" style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-accent)' }}>
+              <div className="mt-4" style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>
                 Composite: {(Object.values(result.challenger_score || {}).reduce((a, b) => a + b, 0) / 6).toFixed(1)}
               </div>
             </div>

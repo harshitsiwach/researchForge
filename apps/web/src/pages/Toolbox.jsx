@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { listTools, toggleTool, testTool } from '../api'
 import { toast } from '../components/Toast'
 import PageLoading from '../components/PageLoading'
+import { Search, Download, GraduationCap, Zap, Wrench, Play, Clock, AlertCircle } from 'lucide-react'
 
 export default function Toolbox() {
   const [tools, setTools] = useState([])
@@ -61,21 +62,23 @@ export default function Toolbox() {
   }
 
   const categories = {
-    search: { label: '🔍 Search', color: '#6366f1' },
-    fetch: { label: '📥 Data Fetching', color: '#14b8a6' },
-    academic: { label: '🎓 Academic', color: '#a855f7' },
-    compute: { label: '⚡ Compute', color: '#f59e0b' },
+    search: { label: 'Search', color: '#6750a4', icon: Search },
+    fetch: { label: 'Data Fetching', color: '#7d5260', icon: Download },
+    academic: { label: 'Academic', color: '#625b71', icon: GraduationCap },
+    compute: { label: 'Compute', color: '#b3261e', icon: Zap },
   }
+
+  const fallbackIcon = Wrench
 
   const enabledCount = tools.filter(t => t.enabled).length
 
-  if (loading) return <PageLoading message="LOADING TOOL REGISTRY..." />
+  if (loading) return <PageLoading message="Loading tools..." />
 
   if (error && tools.length === 0) {
     return (
       <div className="empty-state animate-in">
-        <div className="empty-icon">🧰</div>
-        <h2 className="empty-title" style={{ fontSize: '24px', color: '#fff' }}>Tool Registry Unavailable</h2>
+        <div className="empty-icon"><AlertCircle size={48} /></div>
+        <h2 className="empty-title">Tool Registry Unavailable</h2>
         <p className="empty-text">{error}. Please ensure the backend API is running.</p>
         <button className="btn btn-primary" onClick={load} style={{ marginTop: '24px' }}>Retry</button>
       </div>
@@ -85,14 +88,14 @@ export default function Toolbox() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">🧰 Agent Toolbox</h1>
+        <h1 className="page-title">Agent Toolbox</h1>
         <p className="page-subtitle">
-          Enable skills for your research agents. Active tools are available during simulation runs.
+          Enable tools for your research agents. Active tools are available during simulation runs.
         </p>
         <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
           <span style={{
-            background: enabledCount > 0 ? 'rgba(52, 211, 153, 0.15)' : 'rgba(100,116,139,0.15)',
-            color: enabledCount > 0 ? '#34d399' : '#64748b',
+            background: enabledCount > 0 ? 'var(--success-container)' : 'var(--surface-container-highest)',
+            color: enabledCount > 0 ? 'var(--success)' : 'var(--on-surface-variant-muted)',
             padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 600,
           }}>
             {enabledCount} / {tools.length} Active
@@ -103,28 +106,29 @@ export default function Toolbox() {
       {/* Tool Cards */}
       <div className="card-grid">
         {tools.map(tool => {
-          const cat = categories[tool.category] || { label: tool.category, color: '#6366f1' }
+          const cat = categories[tool.category] || { label: tool.category, color: '#6750a4', icon: fallbackIcon }
+          const CatIcon = cat.icon
           return (
             <div key={tool.id} className="card" style={{
-              borderColor: tool.enabled ? `${cat.color}40` : undefined,
-              boxShadow: tool.enabled ? `0 0 20px ${cat.color}15` : undefined,
+              borderColor: tool.enabled ? cat.color + '40' : 'var(--outline-variant)',
             }}>
               {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{
-                    fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 52, height: 52, borderRadius: 12,
-                    background: tool.enabled ? `${cat.color}20` : 'rgba(30,41,59,0.5)',
-                    border: `1px solid ${tool.enabled ? `${cat.color}40` : 'rgba(99,102,241,0.1)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 48, height: 48, borderRadius: 12,
+                    background: tool.enabled ? cat.color + '15' : 'var(--surface-container-highest)',
+                    border: `1px solid ${tool.enabled ? cat.color + '30' : 'var(--outline-variant)'}`,
+                    color: tool.enabled ? cat.color : 'var(--on-surface-variant-muted)',
                   }}>
-                    {tool.icon}
+                    <CatIcon size={22} />
                   </span>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 16, color: '#f1f5f9' }}>{tool.name}</div>
+                    <div style={{ fontWeight: 600, fontSize: 16, color: 'var(--on-surface)' }}>{tool.name}</div>
                     <span style={{
                       fontSize: 11, padding: '2px 8px', borderRadius: 10,
-                      background: `${cat.color}20`, color: cat.color,
+                      background: cat.color + '15', color: cat.color, fontWeight: 500,
                     }}>
                       {cat.label}
                     </span>
@@ -135,33 +139,31 @@ export default function Toolbox() {
                 <button
                   onClick={() => handleToggle(tool.id)}
                   style={{
-                    width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                    background: tool.enabled
-                      ? 'linear-gradient(135deg, #059669, #34d399)'
-                      : 'rgba(30, 41, 59, 0.8)',
-                    position: 'relative', transition: 'all 0.3s ease',
-                    boxShadow: tool.enabled ? '0 0 10px rgba(52,211,153,0.3)' : 'none',
+                    width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer',
+                    background: tool.enabled ? cat.color : 'var(--surface-container-highest)',
+                    position: 'relative', transition: 'all 0.2s ease',
+                    boxShadow: tool.enabled ? `0 0 8px ${cat.color}30` : 'none',
                   }}
                   aria-label={`Toggle ${tool.name}`}
                   aria-pressed={tool.enabled}
                 >
                   <div style={{
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: '#fff', position: 'absolute', top: 3,
-                    left: tool.enabled ? 25 : 3,
-                    transition: 'left 0.3s ease',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: 'var(--on-primary)', position: 'absolute', top: 3,
+                    left: tool.enabled ? 23 : 3,
+                    transition: 'left 0.2s ease',
+                    boxShadow: '0 1px 3px var(--shadow)',
                   }} />
                 </button>
               </div>
 
               {/* Description */}
-              <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.6, marginBottom: 16 }}>
+              <p style={{ fontSize: 13, color: 'var(--on-surface-variant-muted)', lineHeight: 1.6, marginBottom: 16 }}>
                 {tool.description}
               </p>
 
               {/* Test Area */}
-              <div style={{ borderTop: '1px solid rgba(99,102,241,0.1)', paddingTop: 12 }}>
+              <div style={{ borderTop: '1px solid var(--outline-variant)', paddingTop: 12 }}>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                   <input
                     type="text"
@@ -177,17 +179,17 @@ export default function Toolbox() {
                     disabled={testing[tool.id]}
                     style={{ whiteSpace: 'nowrap' }}
                   >
-                    {testing[tool.id] ? '⏳ Testing…' : '▶ Test'}
+                    {testing[tool.id] ? <Clock size={14} /> : <Play size={14} />} {testing[tool.id] ? 'Testing' : 'Test'}
                   </button>
                 </div>
 
                 {testResults[tool.id] && (
                   <div style={{
-                    background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: 12,
-                    fontSize: 12, color: '#94a3b8', maxHeight: 200, overflowY: 'auto',
-                    fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6,
+                    background: 'var(--surface-container-highest)', borderRadius: 8, padding: 12,
+                    fontSize: 12, color: 'var(--on-surface-variant)', maxHeight: 200, overflowY: 'auto',
+                    fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6,
                     whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                    border: '1px solid rgba(99,102,241,0.1)',
+                    border: '1px solid var(--outline-variant)',
                   }}>
                     {testResults[tool.id]}
                   </div>

@@ -1,17 +1,17 @@
 import React from 'react';
 
 const stateConfig = {
-  idle:      { emoji: '⬡', color: 'rgba(255, 255, 255, 0.05)', glow: 'transparent' },
-  spawning:  { emoji: '⬢', color: 'var(--accent-indigo)', glow: 'var(--accent-glow)' },
-  reading:   { emoji: '👁️‍🗨️', color: 'var(--accent-teal)', glow: 'rgba(20, 184, 166, 0.3)' },
-  thinking:  { emoji: '🧠', color: 'var(--accent-purple)', glow: 'rgba(168, 85, 247, 0.3)' },
-  writing:   { emoji: '✍️', color: 'var(--accent-indigo)', glow: 'var(--accent-glow)' },
-  debating:  { emoji: '💬', color: 'var(--accent-teal)', glow: 'rgba(20, 184, 166, 0.4)' },
-  waiting:   { emoji: '⏳', color: 'rgba(255, 255, 255, 0.1)', glow: 'transparent' },
-  reviewing: { emoji: '🔬', color: 'var(--warning)', glow: 'rgba(245, 158, 11, 0.2)' },
-  scoring:   { emoji: '📊', color: 'var(--success)', glow: 'rgba(16, 185, 129, 0.2)' },
-  completed: { emoji: '✓', color: 'var(--success)', glow: 'rgba(16, 185, 129, 0.3)' },
-  failed:    { emoji: '×', color: 'var(--error)', glow: 'rgba(239, 68, 68, 0.3)' },
+  idle:      { emoji: '⬡', color: 'var(--on-surface-variant-muted)', glow: 'transparent' },
+  spawning:  { emoji: '⬢', color: 'var(--primary)', glow: 'var(--accent-glow)' },
+  reading:   { emoji: '👁️‍🗨️', color: 'var(--tertiary)', glow: 'rgba(125, 82, 96, 0.3)' },
+  thinking:  { emoji: '🧠', color: 'var(--secondary)', glow: 'rgba(98, 91, 113, 0.3)' },
+  writing:   { emoji: '✍️', color: 'var(--primary)', glow: 'var(--accent-glow)' },
+  debating:  { emoji: '💬', color: 'var(--tertiary)', glow: 'rgba(125, 82, 96, 0.4)' },
+  waiting:   { emoji: '⏳', color: 'var(--on-surface-variant-muted)', glow: 'transparent' },
+  reviewing: { emoji: '🔬', color: 'var(--warning)', glow: 'rgba(138, 88, 0, 0.2)' },
+  scoring:   { emoji: '📊', color: 'var(--success)', glow: 'rgba(56, 106, 32, 0.2)' },
+  completed: { emoji: '✓', color: 'var(--success)', glow: 'rgba(56, 106, 32, 0.3)' },
+  failed:    { emoji: '×', color: 'var(--error)', glow: 'rgba(179, 38, 30, 0.3)' },
 };
 
 export default function AgentSprite({ agentId, agent, onClick }) {
@@ -44,10 +44,10 @@ export default function AgentSprite({ agentId, agent, onClick }) {
         <div style={{
           position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
           marginBottom: 12, padding: '8px 12px', minWidth: 140, maxWidth: 200,
-          background: 'var(--bg-glass)', border: `1px solid ${isActive ? 'var(--text-neon)' : 'var(--border)'}`,
-          borderRadius: 'var(--radius-md)', fontSize: '11px', color: 'var(--text-primary)',
+          background: 'var(--surface-container)', border: `1px solid ${isActive ? 'var(--primary)' : 'var(--outline-variant)'}`,
+          borderRadius: 'var(--radius-md)', fontSize: '11px', color: 'var(--on-surface)',
           fontFamily: 'var(--font-mono)', lineHeight: 1.4,
-          zIndex: 200, boxShadow: isActive ? 'var(--shadow-teal)' : '0 10px 25px rgba(0,0,0,0.5)',
+          zIndex: 200, boxShadow: isActive ? 'var(--elevation-2)' : 'var(--elevation-3)',
           backdropFilter: 'blur(12px)',
         }}>
           <div style={{ fontSize: '9px', color: 'var(--text-neon)', marginBottom: '4px', opacity: 0.7 }}>READOUT_V01</div>
@@ -56,7 +56,7 @@ export default function AgentSprite({ agentId, agent, onClick }) {
           <div style={{
             position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
             borderWidth: '6px 6px 0 6px', borderStyle: 'solid',
-            borderColor: `${isActive ? 'var(--text-neon)' : 'rgba(15, 23, 42, 0.9)'} transparent transparent transparent`,
+            borderColor: `${isActive ? 'var(--primary)' : 'var(--surface-container)'} transparent transparent transparent`,
           }} />
         </div>
       )}
@@ -73,8 +73,8 @@ export default function AgentSprite({ agentId, agent, onClick }) {
         width: 52, height: 52,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         borderRadius: '50%', fontSize: 22,
-        background: isSystem ? '#1e293b' : 'var(--bg-secondary)',
-        border: `2px solid ${isActive ? cfg.color : 'var(--border)'}`,
+        background: isSystem ? 'var(--surface-container-highest)' : 'var(--surface-container)',
+        border: `2px solid ${isActive ? cfg.color : 'var(--outline-variant)'}`,
         boxShadow: `0 0 15px ${cfg.glow}`,
         animation: isActive ? 'glowPulse 2s ease-in-out infinite' : 'none',
         zIndex: 5,
@@ -86,9 +86,9 @@ export default function AgentSprite({ agentId, agent, onClick }) {
       {/* ── Data Tag (Name) ── */}
       <div style={{
         marginTop: 10, fontSize: '10px', fontFamily: 'var(--font-mono)',
-        fontWeight: 600, color: 'var(--text-secondary)',
-        background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px',
-        border: '1px solid var(--border)', maxWidth: 80,
+        fontWeight: 600, color: 'var(--on-surface-variant)',
+        background: 'var(--surface-container-highest)', padding: '2px 8px', borderRadius: '4px',
+        border: '1px solid var(--outline-variant)', maxWidth: 80,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       }}>
         {name.toUpperCase()}

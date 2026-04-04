@@ -2,21 +2,22 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getReport } from '../api'
 import { toast } from '../components/Toast'
+import { Crosshair, Link, Pin, Palette, Gem, Lightbulb, ClipboardList, FileText, BarChart3, Globe, Download, AlertTriangle, ChevronDown, Inbox } from 'lucide-react'
 
-function ScoreBar({ label, value, icon }) {
+function ScoreBar({ label, value, icon: Icon }) {
   const getColor = (v) => {
-    if (v >= 80) return '#34d399'
-    if (v >= 60) return '#818cf8'
-    if (v >= 40) return '#fbbf24'
-    return '#f87171'
+    if (v >= 80) return 'var(--success)'
+    if (v >= 60) return 'var(--primary)'
+    if (v >= 40) return 'var(--warning)'
+    return 'var(--error)'
   }
   return (
     <div className="score-bar-wrap">
-      <span className="score-label">{icon} {label}</span>
+      <span className="score-label"><Icon size={14} style={{ marginRight: 4 }} /> {label}</span>
       <div className="score-bar">
         <div className="score-fill" style={{
           width: `${value}%`,
-          background: `linear-gradient(90deg, ${getColor(value)}88, ${getColor(value)})`,
+          background: getColor(value),
         }} />
       </div>
       <span className="score-value" style={{ color: getColor(value) }}>{value.toFixed(1)}</span>
@@ -24,19 +25,19 @@ function ScoreBar({ label, value, icon }) {
   )
 }
 
-function ScenarioCard({ scenario, index, id }) {
+function ScenarioCard({ scenario, index }) {
   const [expanded, setExpanded] = useState(false)
   const probNum = typeof scenario.probability_percentage === 'number' 
     ? scenario.probability_percentage 
     : parseInt(scenario.probability_percentage) || parseInt(scenario.probability_assessment) || 50
 
   let prob
-  if (probNum >= 70) prob = { bg: 'rgba(52,211,153,0.12)', color: '#34d399', icon: '🟢' }
-  else if (probNum >= 30) prob = { bg: 'rgba(251,191,36,0.12)', color: '#fbbf24', icon: '🟡' }
-  else prob = { bg: 'rgba(248,113,113,0.12)', color: '#f87171', icon: '🔴' }
+  if (probNum >= 70) prob = { bg: 'var(--success-container)', color: 'var(--success)' }
+  else if (probNum >= 30) prob = { bg: 'var(--warning-container)', color: 'var(--warning)' }
+  else prob = { bg: 'var(--error-container)', color: 'var(--error)' }
 
   return (
-    <div className="card" style={{ border: '1px solid var(--border)', cursor: 'pointer' }}
+    <div className="card" style={{ border: '1px solid var(--outline-variant)', cursor: 'pointer' }}
       onClick={() => setExpanded(!expanded)}
       role="button" tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && setExpanded(!expanded)}
@@ -45,8 +46,8 @@ function ScenarioCard({ scenario, index, id }) {
         <div className="flex items-center gap-3">
           <div style={{
             width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-            background: 'var(--gradient-accent)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'white',
+            background: 'var(--primary-container)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--on-primary-container)',
           }}>
             S{index + 1}
           </div>
@@ -57,13 +58,12 @@ function ScenarioCard({ scenario, index, id }) {
                 fontSize: 11, padding: '2px 8px', borderRadius: 12,
                 background: prob.bg, color: prob.color, fontWeight: 600,
               }}>
-                {prob.icon} {scenario.probability_percentage !== undefined ? `${probNum}%` : scenario.probability_assessment} probability
+                {scenario.probability_percentage !== undefined ? `${probNum}%` : scenario.probability_assessment} probability
               </span>
             )}
           </div>
         </div>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', transition: 'transform 200ms' ,
-          transform: expanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+        <ChevronDown size={16} style={{ color: 'var(--on-surface-variant-muted)', transition: 'transform 200ms', transform: expanded ? 'rotate(180deg)' : 'none' }} />
       </div>
 
       <p className="text-sm text-muted" style={{ marginTop: 12, lineHeight: 1.7 }}>
@@ -74,13 +74,13 @@ function ScenarioCard({ scenario, index, id }) {
         <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
           {scenario.key_drivers?.length > 0 && (
             <div>
-              <div className="text-sm" style={{ fontWeight: 600, color: 'var(--text-accent)', marginBottom: 6 }}>🔑 Key Drivers</div>
+              <div className="text-sm" style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: '6px' }}><Pin size={14} /> Key Drivers</div>
               <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
                 {scenario.key_drivers.map((d, i) => (
                   <span key={d || i} style={{
                     padding: '4px 10px', borderRadius: 16, fontSize: 12,
-                    background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
-                    color: 'var(--text-secondary)',
+                    background: 'var(--primary-container)',
+                    color: 'var(--on-primary-container)',
                   }}>{d}</span>
                 ))}
               </div>
@@ -88,16 +88,16 @@ function ScenarioCard({ scenario, index, id }) {
           )}
           {scenario.risks?.length > 0 && (
             <div>
-              <div className="text-sm" style={{ fontWeight: 600, color: 'var(--error)', marginBottom: 6 }}>⚠️ Risks</div>
-              <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
+              <div className="text-sm" style={{ fontWeight: 600, color: 'var(--error)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={14} /> Risks</div>
+              <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--on-surface-variant)' }}>
                 {scenario.risks.map((r, i) => <li key={r || i} style={{ marginBottom: 4 }}>{r}</li>)}
               </ul>
             </div>
           )}
           {scenario.opportunities?.length > 0 && (
             <div>
-              <div className="text-sm" style={{ fontWeight: 600, color: 'var(--success)', marginBottom: 6 }}>✨ Opportunities</div>
-              <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--text-secondary)' }}>
+              <div className="text-sm" style={{ fontWeight: 600, color: 'var(--success)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: '6px' }}><Lightbulb size={14} /> Opportunities</div>
+              <ul style={{ paddingLeft: 20, fontSize: 13, color: 'var(--on-surface-variant)' }}>
                 {scenario.opportunities.map((o, i) => <li key={o || i} style={{ marginBottom: 4 }}>{o}</li>)}
               </ul>
             </div>
@@ -119,12 +119,7 @@ function renderMarkdown(md) {
     .replace(/^- (.*$)/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
     .replace(/^> (.*$)/gm, '<blockquote>$1</blockquote>')
-    .replace(/⚠️/g, '<span style="color:#fbbf24">⚠️</span>')
     .replace(/\n\n/g, '</p><p>')
-    .replace(/^(.+)$/gm, (match) => {
-      if (match.startsWith('<')) return match
-      return match
-    })
 }
 
 export default function Results() {
@@ -150,11 +145,11 @@ export default function Results() {
 
   if (error) return (
     <div className="card" style={{ maxWidth: 500, margin: '60px auto', textAlign: 'center' }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
-      <div className="card-title text-error">Report Not Ready</div>
+      <div style={{ marginBottom: 16, color: 'var(--on-surface-variant-muted)' }}><Inbox size={48} /></div>
+      <div className="card-title" style={{ color: 'var(--error)' }}>Report Not Ready</div>
       <p className="text-sm text-muted mt-2">{error}</p>
       <p className="text-sm text-muted mt-2">The run may still be in progress. Check the Run Monitor.</p>
-      <button className="btn btn-secondary btn-sm mt-4" onClick={() => navigate(-1)}>← Go Back</button>
+      <button className="btn btn-secondary btn-sm mt-4" onClick={() => navigate(-1)}>Go Back</button>
     </div>
   )
 
@@ -164,24 +159,24 @@ export default function Results() {
     : 0
 
   const tabs = [
-    { id: 'overview', label: '📊 Overview' },
-    { id: 'scenarios', label: '🌐 Scenarios' },
-    { id: 'report', label: '📝 Full Report' },
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'scenarios', label: 'Scenarios', icon: Globe },
+    { id: 'report', label: 'Full Report', icon: FileText },
   ]
 
   return (
     <div>
       {/* Header */}
       <div className="page-header">
-        <button className="btn btn-ghost btn-sm mb-2" onClick={() => navigate(-1)}>← Back</button>
+        <button className="btn btn-ghost btn-sm mb-2" onClick={() => navigate(-1)}>Back</button>
         <div className="flex items-center gap-3">
           <div style={{
             width: 48, height: 48, borderRadius: 'var(--radius-md)',
-            background: 'var(--gradient-accent)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: 24,
-          }}>📄</div>
+            background: 'var(--primary-container)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', color: 'var(--on-primary-container)',
+          }}><FileText size={24} /></div>
           <div>
-            <h1 className="page-title">{report.title || 'Research Report'}</h1>
+            <h1 className="page-title" style={{ fontSize: 24 }}>{report.title || 'Research Report'}</h1>
             <p className="page-subtitle">
               Run <span className="font-mono">{runId}</span> · Generated {report.created_at?.slice(0, 19)}
             </p>
@@ -192,23 +187,23 @@ export default function Results() {
       {/* Composite score banner */}
       {composite > 0 && (
         <div className="card mb-4" style={{
-          background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08))',
-          borderColor: 'rgba(99,102,241,0.3)',
+          background: 'var(--primary-container)',
+          borderColor: 'var(--primary)',
           textAlign: 'center',
           padding: '28px',
         }}>
           <div className="text-sm text-muted" style={{ textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
             Research Quality Score
           </div>
-          <div style={{ fontSize: 48, fontWeight: 700, color: 'var(--text-accent)', lineHeight: 1 }}>
+          <div style={{ fontSize: 48, fontWeight: 700, color: 'var(--on-primary-container)', lineHeight: 1 }}>
             {composite.toFixed(1)}
           </div>
           <div className="text-sm text-muted mt-2">out of 100</div>
           <div className="flex gap-4 mt-4" style={{ justifyContent: 'center', flexWrap: 'wrap' }}>
             {Object.entries(score).map(([k, v]) => (
-              <div key={k} className="stat-box">
+              <div key={k} className="stat-box" style={{ background: 'var(--surface-container)' }}>
                 <span className="text-muted">{k}: </span>
-                <span style={{ fontWeight: 600, color: v >= 70 ? 'var(--success)' : v >= 50 ? 'var(--text-accent)' : 'var(--warning)' }}>{v.toFixed(1)}</span>
+                <span style={{ fontWeight: 600, color: v >= 70 ? 'var(--success)' : v >= 50 ? 'var(--primary)' : 'var(--warning)' }}>{v.toFixed(1)}</span>
               </div>
             ))}
           </div>
@@ -217,71 +212,71 @@ export default function Results() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-4">
-        {tabs.map(t => (
-          <button key={t.id}
-            className={`btn ${activeTab === t.id ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-            onClick={() => setActiveTab(t.id)}>
-            {t.label}
-          </button>
-        ))}
+        {tabs.map(t => {
+          const Icon = t.icon
+          return (
+            <button key={t.id}
+              className={`btn ${activeTab === t.id ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+              onClick={() => setActiveTab(t.id)}>
+              <Icon size={14} /> {t.label}
+            </button>
+          )
+        })}
         <div style={{ flex: 1 }} />
         <a href={`/api/runs/${runId}/report/export?format=md`}
-          target="_blank" rel="noopener" className="btn btn-secondary btn-sm">📥 Export MD</a>
+          target="_blank" rel="noopener" className="btn btn-secondary btn-sm"><Download size={14} /> MD</a>
         <a href={`/api/runs/${runId}/report/export?format=html`}
-          target="_blank" rel="noopener" className="btn btn-secondary btn-sm">🌐 Export HTML</a>
+          target="_blank" rel="noopener" className="btn btn-secondary btn-sm"><Download size={14} /> HTML</a>
       </div>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* Score details */}
           <div className="card">
-            <div className="card-title mb-4">📊 Quality Dimensions</div>
-            <ScoreBar label="Usefulness" value={score.usefulness || 0} icon="🎯" />
-            <ScoreBar label="Consistency" value={score.consistency || 0} icon="🔗" />
-            <ScoreBar label="Grounding" value={score.grounding || 0} icon="📌" />
-            <ScoreBar label="Diversity" value={score.diversity || 0} icon="🌈" />
-            <ScoreBar label="Clarity" value={score.clarity || 0} icon="💎" />
-            <ScoreBar label="Novelty" value={score.novelty || 0} icon="💡" />
+            <div className="card-title mb-4">Quality Dimensions</div>
+            <ScoreBar label="Usefulness" value={score.usefulness || 0} icon={Crosshair} />
+            <ScoreBar label="Consistency" value={score.consistency || 0} icon={Link} />
+            <ScoreBar label="Grounding" value={score.grounding || 0} icon={Pin} />
+            <ScoreBar label="Diversity" value={score.diversity || 0} icon={Palette} />
+            <ScoreBar label="Clarity" value={score.clarity || 0} icon={Gem} />
+            <ScoreBar label="Novelty" value={score.novelty || 0} icon={Lightbulb} />
           </div>
 
-          {/* Quick stats */}
           <div className="card">
-            <div className="card-title mb-4">📋 Report Summary</div>
+            <div className="card-title mb-4" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><ClipboardList size={18} /> Report Summary</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="stat-box">
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-accent)' }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>
                   {report.scenarios?.length || 0}
                 </div>
                 <div className="text-sm text-muted">Scenarios</div>
               </div>
               <div className="stat-box">
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-accent)' }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>
                   {report.content_md?.split('\n').length || 0}
                 </div>
                 <div className="text-sm text-muted">Lines</div>
               </div>
               <div className="stat-box">
-                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text-accent)' }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--primary)' }}>
                   {Math.round((report.content_md?.length || 0) / 5)}
                 </div>
                 <div className="text-sm text-muted">Words (est.)</div>
               </div>
               <div className="stat-box">
-                <div style={{ fontSize: 28, fontWeight: 700, color: composite >= 70 ? 'var(--success)' : composite >= 50 ? 'var(--text-accent)' : 'var(--warning)' }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: composite >= 70 ? 'var(--success)' : composite >= 50 ? 'var(--primary)' : 'var(--warning)' }}>
                   {composite >= 70 ? 'A' : composite >= 50 ? 'B' : 'C'}
                 </div>
                 <div className="text-sm text-muted">Grade</div>
               </div>
             </div>
 
-            {/* SimLabel */}
             <div style={{
               marginTop: 16, padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-              background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)',
-              fontSize: 12, color: 'var(--warning)',
+              background: 'var(--warning-container)', border: '1px solid var(--warning)',
+              fontSize: 12, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '8px'
             }}>
-              ⚠️ All outputs are simulated scenarios, not predictions. Evaluate against your own evidence.
+              <AlertTriangle size={14} /> All outputs are simulated scenarios, not predictions. Evaluate against your own evidence.
             </div>
           </div>
         </div>
@@ -293,12 +288,12 @@ export default function Results() {
           {report.scenarios?.length > 0 ? (
             <div className="flex flex-col gap-3">
               {report.scenarios.map((s, i) => (
-                <ScenarioCard key={s.id || `scenario-${i}`} scenario={s} index={i} id={s.id} />
+                <ScenarioCard key={s.id || `scenario-${i}`} scenario={s} index={i} />
               ))}
             </div>
           ) : (
             <div className="empty-state">
-              <div className="empty-icon">🌐</div>
+              <div className="empty-icon"><Globe size={48} /></div>
               <h3 className="empty-title">No structured scenarios</h3>
               <p className="empty-text">The simulation didn't produce structured scenario data. Check the Full Report tab for the narrative output.</p>
             </div>

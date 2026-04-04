@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 
 const toasts = []
@@ -37,8 +37,6 @@ export function useToasts() {
   return items
 }
 
-const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' }
-
 function ToastContainer() {
   const items = useToasts()
   if (items.length === 0) return null
@@ -46,7 +44,6 @@ function ToastContainer() {
     <div className="toast-container">
       {items.map(t => (
         <div key={t.id} className={`toast toast-${t.type} animate-in`} role="alert" aria-live="polite">
-          <span className="toast-icon">{icons[t.type]}</span>
           <span className="toast-message">{t.message}</span>
           <button className="toast-close" onClick={() => dismiss(t.id)} aria-label="Dismiss">×</button>
         </div>
