@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { getActiveJobs } from '../api'
 import { ArrowRight } from 'lucide-react'
 
@@ -8,7 +8,6 @@ const POLL_INTERVAL = 5000
 export default function GlobalActiveTaskBar() {
   const [activeJobs, setActiveJobs] = useState({ runs: [], auto_research_jobs: [], total_active: 0 })
   const navigate = useNavigate()
-  const location = useLocation()
 
   useEffect(() => {
     let mounted = true
@@ -35,11 +34,9 @@ export default function GlobalActiveTaskBar() {
 
   const handleLink = () => {
     if (activeJobs.auto_research_jobs.length > 0) {
-      const job = activeJobs.auto_research_jobs[0]
-      navigate(`/auto_research/${job.id}`)
+      navigate(`/auto_research/${activeJobs.auto_research_jobs[0].id}`)
     } else {
-      const run = activeJobs.runs[0]
-      navigate(`/run/${run.id}`)
+      navigate(`/run/${activeJobs.runs[0].id}`)
     }
   }
 
@@ -51,10 +48,10 @@ export default function GlobalActiveTaskBar() {
       <div className="flex items-center gap-4 w-full" style={{ maxWidth: '1120px', margin: '0 auto', padding: '0 24px' }}>
         <div className="active-pulse"></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 600 }}>
-            {mainJob.topic ? 'Auto-Research Active' : 'Simulation Running'}
+          <div style={{ fontSize: '10px', color: 'var(--secondary)', fontWeight: 700, fontFamily: 'var(--font-label)', letterSpacing: '0.1em' }}>
+            {mainJob.topic ? 'AUTO-RESEARCH ACTIVE' : 'SIMULATION RUNNING'}
           </div>
-          <div style={{ fontSize: '13px', color: 'var(--on-surface)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: '12px', color: 'var(--on-surface)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-label)' }}>
             {mainJob.topic || mainJob.id.slice(0, 8)}
           </div>
         </div>
@@ -63,8 +60,8 @@ export default function GlobalActiveTaskBar() {
           <div className="loading-bar-mini">
             <div className="loading-bar-fill-animated"></div>
           </div>
-          <div className="btn btn-ghost btn-sm" style={{ color: 'var(--primary)' }}>
-            View Live {activeJobs.total_active > 1 ? `(${activeJobs.total_active})` : ''} <ArrowRight size={14} />
+          <div className="btn btn-ghost btn-sm" style={{ color: 'var(--primary)', borderColor: 'var(--outline-variant)' }}>
+            VIEW LIVE {activeJobs.total_active > 1 ? `(${activeJobs.total_active})` : ''} <ArrowRight size={12} />
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { Routes, Route, NavLink } from 'react-router-dom'
-import { Home as HomeIcon, Wrench, Settings as SettingsIcon, Moon, Sun } from 'lucide-react'
+import { Home as HomeIcon, Wrench, Settings as SettingsIcon, Sun, Moon } from 'lucide-react'
 import { useThemeStore } from './store/themeStore'
 import Home from './pages/Home'
 import Project from './pages/Project'
@@ -19,49 +19,58 @@ function App() {
   return (
     <div className="app-layout">
       <a href="#main-content" className="skip-link">Skip to main content</a>
+
+      {/* Top Nav */}
+      <nav className="top-nav">
+        <NavLink to="/" className="top-nav-logo">ResearchForge</NavLink>
+        <div className="top-nav-links">
+          <NavLink to="/" className={({ isActive }) => `top-nav-link ${isActive ? 'active' : ''}`}>Dashboard</NavLink>
+          <NavLink to="/toolbox" className={({ isActive }) => `top-nav-link ${isActive ? 'active' : ''}`}>Toolbox</NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `top-nav-link ${isActive ? 'active' : ''}`}>Settings</NavLink>
+        </div>
+        <div className="top-nav-actions">
+          <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Sidebar */}
       <aside className="sidebar" role="navigation" aria-label="Main navigation">
-        <div className="sidebar-logo">
-          Research<span>Forge</span>
+        <div className="sidebar-header">
+          <div className="sidebar-header-title">ResearchForge</div>
+          <div className="sidebar-header-version">v0.1.0</div>
         </div>
         
         <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <span className="nav-icon"><HomeIcon size={20} /></span> <span>Home</span>
+          <span className="nav-icon"><HomeIcon size={18} /></span> <span>Dashboard</span>
         </NavLink>
         <NavLink to="/toolbox" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <span className="nav-icon"><Wrench size={20} /></span> <span>Toolbox</span>
+          <span className="nav-icon"><Wrench size={18} /></span> <span>Toolbox</span>
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-          <span className="nav-icon"><SettingsIcon size={20} /></span> <span>Settings</span>
+          <span className="nav-icon"><SettingsIcon size={18} /></span> <span>Settings</span>
         </NavLink>
 
-        <div style={{ flex: 1 }} />
+        <div className="sidebar-cta">
+          <NavLink to="/" className="btn btn-secondary w-full" style={{ fontSize: 10, padding: '8px 12px' }}>
+            <span>New Workspace</span>
+          </NavLink>
+        </div>
         
-        {/* Theme toggle */}
-        <button
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
-          title={`${isDark ? 'Light' : 'Dark'} mode`}
-        >
-          {isDark ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
-        
-        <div className="lab-status" style={{ padding: '0 12px' }}>
-          <div style={{
-            fontSize: '12px',
-            color: 'var(--on-surface-variant-muted)',
-            fontFamily: 'var(--font-body)',
-          }}>
+        <div className="sidebar-status">
+          <div className="sidebar-status-text">
             <div style={{ color: 'var(--success)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span className="badge-dot" style={{ width: 6, height: 6 }}></span>
-              System Online
+              SYSTEM ONLINE
             </div>
             v0.1.0
           </div>
         </div>
       </aside>
 
-      <main id="main-content" className="main-content" style={{ paddingBottom: '100px' }}>
+      {/* Main Content */}
+      <main id="main-content" className="main-content">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/workspace/:wsId/project/:projId" element={<Project />} />
@@ -76,6 +85,16 @@ function App() {
 
         <GlobalActiveTaskBar />
       </main>
+
+      {/* Footer Status Bar */}
+      <footer className="footer-bar">
+        <div className="footer-bar-left">SYSTEM_STATUS: NOMINAL // OPERATIVE_CONNECTED</div>
+        <div className="footer-bar-right">
+          <a href="#">LATENCY_04MS</a>
+          <a href="#">ENCRYPTION_ACTIVE</a>
+          <a href="#">NODE_09</a>
+        </div>
+      </footer>
     </div>
   )
 }

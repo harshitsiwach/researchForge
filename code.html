@@ -1,0 +1,340 @@
+<html><head><meta charset="utf-8"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,400;0,700;0,900;1,900&amp;family=Space+Grotesk:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "secondary-fixed-dim": "#abd600",
+                "primary": "#dbfcff",
+                "on-secondary-fixed-variant": "#3c4d00",
+                "surface-container": "#201f1f",
+                "surface": "#131313",
+                "surface-container-low": "#1c1b1b",
+                "on-tertiary-container": "#a900a9",
+                "on-background": "#e5e2e1",
+                "on-tertiary": "#5b005b",
+                "surface-container-high": "#2a2a2a",
+                "secondary-fixed": "#c3f400",
+                "primary-fixed": "#7df4ff",
+                "on-tertiary-fixed-variant": "#810081",
+                "secondary": "#ffffff",
+                "on-surface": "#e5e2e1",
+                "background": "#131313",
+                "outline-variant": "#3b494b",
+                "on-secondary": "#283500",
+                "on-secondary-fixed": "#161e00",
+                "tertiary-fixed": "#ffd7f5",
+                "primary-fixed-dim": "#00dbe9",
+                "surface-dim": "#131313",
+                "on-primary-fixed-variant": "#004f54",
+                "on-tertiary-fixed": "#380038",
+                "inverse-on-surface": "#313030",
+                "on-primary-container": "#006970",
+                "on-surface-variant": "#b9cacb",
+                "inverse-surface": "#e5e2e1",
+                "on-primary": "#00363a",
+                "on-primary-fixed": "#002022",
+                "surface-container-lowest": "#0e0e0e",
+                "surface-variant": "#353534",
+                "surface-tint": "#00dbe9",
+                "tertiary-container": "#ffc9f4",
+                "error-container": "#93000a",
+                "primary-container": "#00f0ff",
+                "tertiary-fixed-dim": "#ffabf3",
+                "surface-bright": "#3a3939",
+                "on-error-container": "#ffdad6",
+                "surface-container-highest": "#353534",
+                "error": "#ffb4ab",
+                "tertiary": "#fff3f9",
+                "outline": "#849495",
+                "inverse-primary": "#006970",
+                "on-error": "#690005",
+                "secondary-container": "#c3f400",
+                "on-secondary-container": "#556d00"
+        },
+        "borderRadius": {
+                "DEFAULT": "0px",
+                "lg": "0px",
+                "xl": "0px",
+                "full": "9999px"
+        },
+        "fontFamily": {
+                "headline": ["Epilogue"],
+                "body": ["Space Grotesk"],
+                "label": ["Space Grotesk"]
+        }
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .screentone-dots {
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 4px 4px;
+  }
+  .diagonal-slash {
+    clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+  }
+  .manga-border-heavy {
+    box-shadow: 4px 4px 0px 0px #000000;
+  }
+  .neon-glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+  .neon-glow-green {
+    box-shadow: 0 0 20px rgba(195, 244, 0, 0.3);
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #131313;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #3b494b;
+  }
+</style>
+</head><body class="dark bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary">
+<!-- TopNavBar Implementation -->
+<nav class="bg-[#131313] text-[#00F0FF] docked full-width top-0 border-b-4 border-black flex justify-between items-center w-full px-6 py-4 fixed z-50">
+<div class="flex items-center gap-8">
+<div class="text-2xl font-black italic tracking-tighter text-[#00F0FF] font-headline uppercase">
+        outcomeOS
+      </div>
+<div class="hidden md:flex gap-6">
+<a class="font-epilogue font-black tracking-tighter uppercase text-[#00F0FF] border-b-4 border-[#00F0FF] pb-1 hover:bg-[#00F0FF] hover:text-black transition-colors duration-150" href="#">DASHBOARD</a>
+<a class="font-epilogue font-black tracking-tighter uppercase text-[#e5e2e1] opacity-70 hover:bg-[#00F0FF] hover:text-black transition-colors duration-150" href="#">AGENTS</a>
+<a class="font-epilogue font-black tracking-tighter uppercase text-[#e5e2e1] opacity-70 hover:bg-[#00F0FF] hover:text-black transition-colors duration-150" href="#">ARCHIVE</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<input class="bg-surface-container-low border-b-2 border-primary-container px-4 py-1 text-xs font-label focus:outline-none focus:bg-surface-container-high transition-all" placeholder="SYSTEM_SEARCH" type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined cursor-pointer hover:text-white">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-white">terminal</span>
+<img alt="USER_01_AVATAR" class="w-8 h-8 border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOneSCAyC-ETMK9NlPBqR9q858pgCDQ73vHeXu4vK7-H02Nl3K0DZSuU210kDVzxiEA27V2D1I9X61I0VejSdNZQTc7GyFbIj1mmp0zK-vAPRc9fMycuN_BkdXyKPWUrLM1GNukYs4gfhy1KJHO-3j2lOMCmAGZV4bsso84-WiQsfaOwHZyPUVkDtUnq3XjwhH9Z7M_8AC5dndswL8qF-U5n8nFPHhXrKAL1h6MWWBA-4O1eGns1Wo79XhBXFOcamj16dCdNfv0fI"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar Implementation -->
+<aside class="fixed left-0 top-0 h-full flex flex-col z-40 bg-[#131313] docked left-0 h-screen w-64 border-r-4 border-black pt-24 pb-8 px-4">
+<div class="mb-8 px-2">
+<div class="flex items-center gap-3 mb-2">
+<img alt="SYSTEM_CORE_ID" class="w-10 h-10 border-2 border-secondary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUkZROIvfjIgj_GnrO7O2UxFZlV8RReTtZ3tznwIBWHdkVh81XtLL5Uh2NCbJwPeOi1PHebkzSQt8FM_OsBFt-EqlAQFgYJkjeZwiyVA4dc8sCPOy5lCnfYUSRaBGDLtOAYYJvXYUvH8xc_kLEYaPc_2UANP18_hAN4Qhz9-NQWqw7pN5hUXeVLXE4Id1mdryg_OLB2Yz3Ntwg82_EyHT3UUS_k4L-wPZ9T84LWZ9rOdevC7H4dPtPE_BczC8wfuH6Dxz8jwFce40"/>
+<div>
+<div class="font-headline font-black text-xs text-[#CCFF00] tracking-widest uppercase">STRAT_OS</div>
+<div class="font-label text-[10px] opacity-50">V.098_BETA</div>
+</div>
+</div>
+</div>
+<div class="space-y-4 flex-1">
+<a class="flex items-center space-x-3 bg-[#CCFF00] text-black font-bold p-3 scale-105 transition-all font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">insight_spark</span>
+<span>COMMAND</span>
+</a>
+<a class="flex items-center space-x-3 text-[#e5e2e1] p-3 opacity-60 hover:bg-[#CCFF00]/20 hover:opacity-100 transition-all font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span>HIVE_MIND</span>
+</a>
+<a class="flex items-center space-x-3 text-[#e5e2e1] p-3 opacity-60 hover:bg-[#CCFF00]/20 hover:opacity-100 transition-all font-label text-xs uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+<span>DOSSIERS</span>
+</a>
+</div>
+<div class="mt-auto space-y-4">
+<button class="w-full bg-[#CCFF00] text-black font-black p-3 font-label text-xs tracking-tighter manga-border-heavy hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+        INITIATE_SEQUENCE
+      </button>
+<div class="pt-4 border-t-2 border-black space-y-2">
+<a class="flex items-center space-x-3 text-[#e5e2e1] p-2 opacity-60 hover:opacity-100 font-label text-[10px] uppercase" href="#">
+<span class="material-symbols-outlined text-sm">settings</span>
+<span>SETTINGS</span>
+</a>
+<a class="flex items-center space-x-3 text-[#e5e2e1] p-2 opacity-60 hover:opacity-100 font-label text-[10px] uppercase" href="#">
+<span class="material-symbols-outlined text-sm">logout</span>
+<span>LOGOUT</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="pl-64 pt-20 pb-12 min-h-screen bg-surface">
+<div class="px-8 py-10 max-w-7xl mx-auto">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+<div>
+<div class="flex items-center gap-4 mb-2">
+<span class="h-1 w-12 bg-primary-container"></span>
+<span class="font-label text-xs text-primary tracking-[0.3em] uppercase">SYSTEM_OPERATIVE_DASHBOARD</span>
+</div>
+<h1 class="font-headline font-black italic uppercase text-5xl md:text-7xl tracking-tighter text-on-surface flex items-center gap-4">
+            Research <span class="text-primary-container relative">Workspaces<span class="absolute -bottom-2 left-0 w-full h-2 bg-primary-container/20"></span></span>
+</h1>
+</div>
+<button class="bg-primary-container text-on-primary-fixed font-black px-8 py-4 manga-border-heavy neon-glow-cyan font-headline text-lg tracking-tighter hover:bg-white transition-all transform active:translate-y-1 active:shadow-none group">
+          NEW_WORKSPACE <span class="ml-2 group-hover:translate-x-1 inline-block">+</span>
+</button>
+</section>
+<!-- Decorative Ink Line -->
+<div class="w-full h-8 bg-black mb-12 flex items-center">
+<div class="w-1/3 h-full bg-secondary-container diagonal-slash ml-12"></div>
+<div class="w-1/4 h-full bg-primary-container diagonal-slash -ml-4 opacity-50"></div>
+<div class="flex-1 h-[2px] bg-outline-variant mx-8"></div>
+<div class="text-[10px] font-label text-outline-variant mr-12 tracking-widest">SEC_STATUS: CLEAR</div>
+</div>
+<!-- Bento Grid Content -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Large Workspace Card -->
+<div class="md:col-span-8 bg-surface-container-low border-4 border-black relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 text-outline-variant screentone-dots w-32 h-32 opacity-20 pointer-events-none"></div>
+<div class="p-8 relative z-10">
+<div class="flex justify-between items-start mb-12">
+<div>
+<span class="bg-secondary-container text-black px-3 py-1 text-[10px] font-bold tracking-widest uppercase mb-4 inline-block">ACTIVE_NODE</span>
+<h2 class="text-4xl font-headline font-black uppercase tracking-tighter text-on-surface">Local Test Workspace</h2>
+<p class="font-label text-sm text-on-surface-variant max-w-md mt-2">Isolated environment for rapid agent prototyping and algorithmic performance testing. Stability: 98.4%.</p>
+</div>
+<div class="text-right">
+<div class="text-xs font-label text-secondary-container mb-1">LATENCY</div>
+<div class="text-2xl font-headline font-bold text-secondary-container">0.04 MS</div>
+</div>
+</div>
+<div class="space-y-6 mb-12">
+<div>
+<div class="flex justify-between text-[10px] font-label uppercase tracking-widest mb-2">
+<span>Resource Consumption</span>
+<span class="text-primary-container">64% / 100%</span>
+</div>
+<div class="h-6 bg-black border-2 border-outline-variant flex p-1">
+<div class="h-full bg-gradient-to-r from-primary-container to-secondary-container w-[64%] shadow-[0_0_10px_rgba(0,240,255,0.5)]"></div>
+<div class="h-full border-r-2 border-background w-[10%] opacity-20"></div>
+<div class="h-full border-r-2 border-background w-[10%] opacity-20"></div>
+<div class="h-full border-r-2 border-background w-[10%] opacity-20"></div>
+</div>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="bg-secondary-container text-black font-black px-6 py-3 font-label text-sm tracking-tighter flex items-center gap-2 hover:bg-white transition-all transform hover:-translate-y-1">
+                OPEN WORKSPACE <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+<button class="border-4 border-black px-6 py-3 font-label text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-all">
+                + NEW PROJECT
+              </button>
+</div>
+</div>
+</div>
+<!-- Sidebar Stats Card -->
+<div class="md:col-span-4 space-y-8">
+<div class="bg-surface-container-high border-4 border-black p-6 relative">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary-container">monitoring</span>
+<h3 class="font-headline font-black uppercase text-xl tracking-tighter">System Health</h3>
+</div>
+<div class="space-y-4">
+<div class="flex justify-between items-center py-2 border-b border-outline-variant/30">
+<span class="text-[10px] font-label text-on-surface-variant uppercase">Uptime</span>
+<span class="font-headline font-bold text-secondary-container">99.9%</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-outline-variant/30">
+<span class="text-[10px] font-label text-on-surface-variant uppercase">Nodes Active</span>
+<span class="font-headline font-bold text-primary-container">1,024</span>
+</div>
+<div class="flex justify-between items-center py-2">
+<span class="text-[10px] font-label text-on-surface-variant uppercase">Threat Level</span>
+<span class="font-headline font-bold text-tertiary-container">MINIMAL</span>
+</div>
+</div>
+</div>
+<!-- Secondary Workspace Grid Small -->
+<div class="bg-black border-4 border-secondary-container p-6 manga-border-heavy neon-glow-green">
+<h3 class="font-headline font-black uppercase text-secondary-container mb-4">Quick Deploy</h3>
+<div class="space-y-3">
+<div class="bg-surface p-3 border-l-4 border-secondary-container flex justify-between items-center group cursor-pointer hover:bg-surface-bright transition-all">
+<div>
+<div class="text-[10px] font-label text-secondary-container uppercase">Sandbox_01</div>
+<div class="text-xs font-bold uppercase">PROTOTYPE_ENV</div>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">bolt</span>
+</div>
+<div class="bg-surface p-3 border-l-4 border-outline-variant flex justify-between items-center group cursor-pointer hover:bg-surface-bright transition-all">
+<div>
+<div class="text-[10px] font-label text-outline-variant uppercase">Archived_09</div>
+<div class="text-xs font-bold uppercase">LEGACY_DEBT</div>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">history</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity Feed (Wide) -->
+<div class="md:col-span-12">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline font-black uppercase text-2xl tracking-tighter flex items-center gap-3">
+<span class="w-8 h-8 bg-primary-container text-black flex items-center justify-center text-sm">#</span>
+              OPERATIVE_FEED
+            </h3>
+<div class="h-[2px] flex-1 bg-outline-variant/30 mx-6"></div>
+<button class="text-[10px] font-label uppercase tracking-widest text-primary-container hover:underline">VIEW_ALL_LOGS</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container border-t-4 border-primary-container p-4">
+<div class="flex gap-4 items-start">
+<div class="w-10 h-10 bg-black flex-shrink-0 flex items-center justify-center border border-primary-container">
+<span class="material-symbols-outlined text-primary-container">sync</span>
+</div>
+<div>
+<div class="text-[10px] font-label text-outline-variant">14:22:01 // SYNC</div>
+<p class="text-xs font-bold mt-1 uppercase">Node 09 reconciled with hive mind master.</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container border-t-4 border-secondary-container p-4">
+<div class="flex gap-4 items-start">
+<div class="w-10 h-10 bg-black flex-shrink-0 flex items-center justify-center border border-secondary-container">
+<span class="material-symbols-outlined text-secondary-container">add_box</span>
+</div>
+<div>
+<div class="text-[10px] font-label text-outline-variant">13:45:12 // UPDATE</div>
+<p class="text-xs font-bold mt-1 uppercase">New asset 'X-CALIBUR' registered in dossier.</p>
+</div>
+</div>
+</div>
+<div class="bg-surface-container border-t-4 border-tertiary-container p-4">
+<div class="flex gap-4 items-start">
+<div class="w-10 h-10 bg-black flex-shrink-0 flex items-center justify-center border border-tertiary-container">
+<span class="material-symbols-outlined text-tertiary-container">warning</span>
+</div>
+<div>
+<div class="text-[10px] font-label text-outline-variant">12:01:59 // ALERT</div>
+<p class="text-xs font-bold mt-1 uppercase">Unauthorized ping detected in Archive sector.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Implementation -->
+<footer class="bg-black docked full-width bottom-0 border-t-4 border-[#131313] fixed bottom-0 w-full flex justify-between items-center px-4 py-1 z-50">
+<div class="font-space-grotesk text-[10px] tracking-tight text-[#CCFF00]">
+      SYSTEM_STATUS: NOMINAL // OPERATIVE_CONNECTED
+    </div>
+<div class="flex gap-6">
+<a class="font-space-grotesk text-[10px] tracking-tight text-[#e5e2e1]/40 hover:text-[#ffc9f4] transition-all" href="#">LATENCY_04MS</a>
+<a class="font-space-grotesk text-[10px] tracking-tight text-[#e5e2e1]/40 hover:text-[#ffc9f4] transition-all" href="#">ENCRYPTION_ACTIVE</a>
+<a class="font-space-grotesk text-[10px] tracking-tight text-[#e5e2e1]/40 hover:text-[#ffc9f4] transition-all" href="#">NODE_09</a>
+</div>
+</footer>
+
+```</body></html>

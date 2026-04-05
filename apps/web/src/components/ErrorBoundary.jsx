@@ -16,12 +16,12 @@ class ErrorBoundary extends Component {
         <div className="error-boundary">
           <div className="error-boundary-content">
             <div className="error-boundary-icon">!</div>
-            <h2 className="error-boundary-title">Something went wrong</h2>
+            <h2 className="error-boundary-title">System Error</h2>
             <p className="error-boundary-message">
               {this.state.error?.message || 'An unexpected error occurred'}
             </p>
             <button className="btn btn-primary" onClick={() => window.location.reload()}>
-              Reload Application
+              Reload System
             </button>
           </div>
         </div>

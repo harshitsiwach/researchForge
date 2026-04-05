@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listWorkspaces, createWorkspace, createProject } from '../api'
 import { toast } from '../components/Toast'
-import { Plus, Clock, ShieldCheck, FlaskConical, ArrowRight } from 'lucide-react'
+import { Plus, Clock, ShieldCheck, FlaskConical, ArrowRight, ArrowUpRight } from 'lucide-react'
 
 export default function Home() {
   const [workspaces, setWorkspaces] = useState([])
@@ -98,106 +98,117 @@ export default function Home() {
     <div className="animate-in">
       <div className="page-header flex justify-between items-end">
         <div>
-          <h1 className="page-title">Research Workspaces</h1>
-          <p className="page-subtitle">Create and manage research projects across your workspaces.</p>
+          <div className="page-tag">SYSTEM_OPERATIVE_DASHBOARD</div>
+          <h1 className="page-title">Research <span style={{ color: 'var(--primary)' }}>Workspaces</span></h1>
         </div>
-        <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }}>
-          <Plus size={18} /> New Workspace
+        <button className="btn btn-primary manga-border" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }}>
+          NEW_WORKSPACE <Plus size={16} />
         </button>
+      </div>
+
+      {/* Ink Divider */}
+      <div className="ink-divider">
+        <div className="slash diagonal-slash" style={{ width: '33%', left: '12%', background: 'var(--secondary-container)' }}></div>
+        <div className="slash diagonal-slash" style={{ width: '25%', left: '35%', background: 'var(--primary)', opacity: 0.5 }}></div>
+        <div className="line"></div>
+        <div className="label">SEC_STATUS: CLEAR</div>
       </div>
 
       {loading ? (
         <div className="flex items-center gap-4 mt-12">
           <div className="spinner" style={{ width: 24, height: 24 }} />
-          <span style={{ color: 'var(--on-surface-variant)', fontSize: '14px' }}>Loading workspaces...</span>
+          <span style={{ color: 'var(--on-surface-variant)', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.1em' }}>INITIALIZING_DATA_CLUSTER...</span>
         </div>
       ) : workspaces.length === 0 ? (
         <div className="empty-state animate-in">
           <div className="empty-icon"><FlaskConical size={48} /></div>
-          <h2 className="empty-title">No workspaces yet</h2>
-          <p className="empty-text">Create your first workspace to start running multi-agent research simulations.</p>
-          <button className="btn btn-primary" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }} style={{ marginTop: '24px' }}>
-            Create Workspace
+          <h2 className="empty-title">No Active Nodes</h2>
+          <p className="empty-text">Initialize your first research workspace to begin generating scenarios and monitoring agent interactions.</p>
+          <button className="btn btn-primary manga-border" onClick={() => { setShowNew(true); setTimeout(() => openModal(modalRef), 100) }} style={{ marginTop: '24px' }}>
+            INITIALIZE WORKSPACE
           </button>
         </div>
       ) : (
-        <div className="card-grid">
+        <div className="bento-grid">
           {workspaces.map((ws, i) => (
-            <div key={ws.id} className="card animate-in" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className="card-header">
+            <div key={ws.id} className="bento-col-8 card animate-in" style={{ animationDelay: `${i * 0.1}s` }}>
+              <div className="absolute top-0 right-0 p-4 text-outline-variant screentone-dots w-32 h-32 opacity-20 pointer-events-none" style={{ width: 128, height: 128 }}></div>
+              
+              <div className="flex justify-between items-start mb-12 relative z-10">
                 <div>
-                  <div className="card-title" style={{ fontSize: '18px' }}>{ws.name}</div>
-                  <div className="card-subtitle">
-                    Created {ws.created_at?.slice(0, 10)}
-                  </div>
+                  <span className="badge" style={{ background: 'var(--secondary-container)', color: 'var(--ink-black)', marginBottom: 12, display: 'inline-block' }}>ACTIVE_NODE</span>
+                  <h2 className="card-title" style={{ fontSize: 28, fontFamily: 'var(--font-headline)', fontWeight: 900, textTransform: 'uppercase' }}>{ws.name}</h2>
+                  <p className="text-sm text-muted" style={{ maxWidth: 400, marginTop: 8 }}>Isolated environment for rapid agent prototyping and algorithmic performance testing.</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-muted" style={{ fontSize: 10, fontFamily: 'var(--font-label)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>CREATED</div>
+                  <div style={{ fontSize: 18, fontFamily: 'var(--font-headline)', fontWeight: 700, color: 'var(--secondary)' }}>{ws.created_at?.slice(0, 10)}</div>
                 </div>
               </div>
 
-              <div style={{ margin: '16px 0', padding: '12px', background: 'var(--surface-container-high)', borderRadius: 'var(--radius-sm)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--on-surface-variant-muted)', marginBottom: '6px' }}>
-                  <span>Activity</span>
-                  <span>42%</span>
+              <div style={{ marginBottom: 24 }}>
+                <div className="flex justify-between text-sm" style={{ fontFamily: 'var(--font-label)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+                  <span>Resource Consumption</span>
+                  <span style={{ color: 'var(--primary)' }}>42% / 100%</span>
                 </div>
-                <div className="score-bar" style={{ height: '4px' }}>
-                  <div className="score-fill" style={{ width: '42%' }}></div>
+                <div style={{ height: 20, background: 'var(--ink-black)', border: '2px solid var(--outline-variant)', display: 'flex', padding: 2, gap: 2 }}>
+                  <div style={{ height: '100%', background: 'var(--primary)', width: '42%', boxShadow: '0 0 10px rgba(0, 240, 255, 0.5)' }}></div>
+                  {[...Array(5)].map((_, j) => (
+                    <div key={j} style={{ height: '100%', borderRight: '2px solid var(--surface)', width: '11.6%', opacity: 0.2 }}></div>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setShowProject(ws.id)}>
-                  + New Project
+              <div className="flex gap-4">
+                <button className="btn btn-secondary" onClick={() => setShowProject(ws.id)}>
+                  OPEN WORKSPACE <ArrowRight size={14} />
                 </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/workspace/${ws.id}/project/list`)}>
-                  Open <ArrowRight size={14} />
+                <button className="btn btn-ghost" onClick={() => navigate(`/workspace/${ws.id}/project/list`)}>
+                  + NEW PROJECT
                 </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
 
-      {recentRuns.length > 0 && (
-        <div className="card mt-6 animate-in" style={{ animationDelay: '0.3s' }}>
-          <div className="card-header">
-            <div className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={18} /> Recent Runs
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            {recentRuns.map(run => (
-              <div key={run.id} className="flex items-center justify-between"
-                style={{ padding: '10px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--surface-container-high)', border: '1px solid var(--outline-variant)', cursor: 'pointer' }}
-                onClick={() => navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}
-                role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}>
-                <div>
-                  <span className="font-mono text-sm">{run.id.slice(0, 16)}</span>
-                  <span className="text-sm text-muted" style={{ marginLeft: '12px' }}>{run.workspaceName} / {run.projectName}</span>
-                </div>
-                <span className={`badge badge-${run.status}`}>
-                  <span className="badge-dot" />
-                  {run.status}
-                </span>
+          {/* Sidebar Stats */}
+          <div className="bento-col-4 flex flex-col gap-6">
+            <div className="card" style={{ background: 'var(--surface-container-high)' }}>
+              <div className="flex items-center gap-2 mb-6">
+                <Clock size={18} style={{ color: 'var(--primary)' }} />
+                <h3 className="card-title">Recent Activity</h3>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+              {recentRuns.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {recentRuns.map(run => (
+                    <div key={run.id} className="flex items-center justify-between"
+                      style={{ padding: '10px 12px', background: 'var(--surface)', borderLeft: '4px solid var(--primary)', cursor: 'pointer' }}
+                      onClick={() => navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}
+                      role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && navigate(run.status === 'completed' ? `/run/${run.id}/results` : `/run/${run.id}`)}>
+                      <div>
+                        <div className="text-sm" style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{run.id.slice(0, 12)}</div>
+                        <div className="text-sm text-muted" style={{ fontSize: 10 }}>{run.workspaceName}</div>
+                      </div>
+                      <span className={`badge badge-${run.status}`}><span className="badge-dot" />{run.status}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted" style={{ fontFamily: 'var(--font-label)', fontSize: 11 }}>NO_RECENT_ACTIVITY</div>
+              )}
+            </div>
 
-      {promotedConfig && (
-        <div className="card mt-4 animate-in" style={{ animationDelay: '0.4s', borderColor: 'var(--success)' }}>
-          <div className="card-header">
-            <div className="card-title" style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldCheck size={18} /> Baseline Configuration
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="stat-box" style={{ minWidth: '120px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--on-surface)' }}>{promotedConfig.label}</div>
-              <div className="text-sm text-muted">{promotedConfig.projectName}</div>
-            </div>
-            <div className="text-sm text-muted">
-              Agents: {promotedConfig.config_json?.num_agents || '—'} · Rounds: {promotedConfig.config_json?.num_rounds || '—'} · Style: {promotedConfig.config_json?.debate_style || '—'}
-            </div>
+            {promotedConfig && (
+              <div className="card" style={{ background: 'var(--ink-black)', border: '4px solid var(--secondary-container)' }}>
+                <h3 className="card-title" style={{ color: 'var(--secondary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <ShieldCheck size={16} /> BASELINE_CONFIG
+                </h3>
+                <div style={{ fontFamily: 'var(--font-headline)', fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{promotedConfig.label}</div>
+                <div className="text-sm text-muted" style={{ fontSize: 11, fontFamily: 'var(--font-label)' }}>{promotedConfig.projectName}</div>
+                <div className="text-sm text-muted" style={{ fontSize: 10, fontFamily: 'var(--font-mono)', marginTop: 8 }}>
+                  AGENTS: {promotedConfig.config_json?.num_agents || '—'} · ROUNDS: {promotedConfig.config_json?.num_rounds || '—'}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -206,16 +217,14 @@ export default function Home() {
         <div className="modal-overlay" onClick={() => setShowNew(false)}>
           <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateWs} role="dialog" aria-modal="true" aria-label="Create Workspace" ref={modalRef} tabIndex={-1}>
             <h2 className="modal-title">Create Workspace</h2>
-            
             <div className="form-group">
-              <label className="form-label">Workspace name</label>
+              <label className="form-label">Workspace Name</label>
               <input className="form-input" value={wsName} onChange={e => setWsName(e.target.value)}
                 placeholder="e.g. Market Research 2025" autoFocus />
             </div>
-            
             <div className="flex gap-3 mt-8">
-              <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowNew(false)}>Cancel</button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Create</button>
+              <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowNew(false)}>Cancel</button>
+              <button type="submit" className="btn btn-primary manga-border" style={{ flex: 2 }}>Create</button>
             </div>
           </form>
         </div>
@@ -225,20 +234,19 @@ export default function Home() {
         <div className="modal-overlay" onClick={() => setShowProject(null)}>
           <form className="modal" onClick={e => e.stopPropagation()} onSubmit={handleCreateProject} role="dialog" aria-modal="true" aria-label="New Project" ref={projectModalRef} tabIndex={-1}>
             <h2 className="modal-title">New Project</h2>
-            
             <div className="form-group">
-              <label className="form-label">Project name</label>
+              <label className="form-label">Project Name</label>
               <input className="form-input" value={projName} onChange={e => setProjName(e.target.value)}
                 placeholder="e.g. Market Sentiment Analysis" autoFocus />
             </div>
             <div className="form-group">
-              <label className="form-label">Research question</label>
+              <label className="form-label">Research Question</label>
               <textarea className="form-textarea" value={projQuestion} onChange={e => setProjQuestion(e.target.value)}
                 placeholder="What question are you trying to answer?" />
             </div>
             <div className="flex gap-3 mt-8">
-              <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowProject(null)}>Cancel</button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 2 }}>Create Project</button>
+              <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowProject(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary manga-border" style={{ flex: 2 }}>Create Project</button>
             </div>
           </form>
         </div>
